@@ -10,6 +10,7 @@ type Photo = {
   date: string
   uploader: string
   semesterLabel: string
+  imageUrl?: string
 }
 
 const PHOTOS: Photo[] = [
@@ -118,7 +119,17 @@ const PhotoImage = styled.div<{ $hueA: string; $hueB: string }>`
   background: repeating-linear-gradient(135deg, ${(p) => p.$hueA} 0px, ${(p) => p.$hueA} 14px, ${(p) => p.$hueB} 14px, ${(p) => p.$hueB} 28px);
 `
 
+const PhotoThumb = styled.img`
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+`
+
 const PhotoLabel = styled.div`
+  position: relative;
+  z-index: 1;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.4px;
@@ -194,55 +205,56 @@ function App() {
 
       <ContentShell $expanded={sidebarExpanded}>
         <ContentInner>
-        {activeTab === 'home' ? (
-          <ScreenWrap>
-            <HomeHeader>
-              <div>
-                <ScreenTitle>Timeline</ScreenTitle>
-                <ScreenDesc>업로드 된 사진들</ScreenDesc>
-              </div>
-              <FilterRow>
-                {FILTERS.map((f) => (
-                  <PillButton
-                    key={f.id}
-                    type="button"
-                    $active={activeFilter === f.id}
-                    onClick={() => setActiveFilter(f.id)}
-                  >
-                    {f.label}
-                  </PillButton>
-                ))}
-              </FilterRow>
-            </HomeHeader>
+          {activeTab === 'home' ? (
+            <ScreenWrap>
+              <HomeHeader>
+                <div>
+                  <ScreenTitle>Timeline</ScreenTitle>
+                  <ScreenDesc>업로드 된 사진들</ScreenDesc>
+                </div>
+                <FilterRow>
+                  {FILTERS.map((f) => (
+                    <PillButton
+                      key={f.id}
+                      type="button"
+                      $active={activeFilter === f.id}
+                      onClick={() => setActiveFilter(f.id)}
+                    >
+                      {f.label}
+                    </PillButton>
+                  ))}
+                </FilterRow>
+              </HomeHeader>
 
-            <HomeGrid>
-              {visiblePhotos.map((p, i) => {
-                const [hueA, hueB] = PLACE_HUES[i % PLACE_HUES.length]
-                return (
-                  <PhotoCard key={p.id}>
-                    <PhotoImage $hueA={hueA} $hueB={hueB}>
-                      <PhotoLabel>PHOTO · {p.place}</PhotoLabel>
-                    </PhotoImage>
-                    <MetaRow>
-                      <div>
-                        <PlaceText>{p.place}</PlaceText>
-                        <DateText>
-                          {p.date} · {p.uploader}
-                        </DateText>
-                      </div>
-                      <SemesterBadge>{p.semesterLabel}</SemesterBadge>
-                    </MetaRow>
-                  </PhotoCard>
-                )
-              })}
-            </HomeGrid>
-          </ScreenWrap>
-        ) : (
-          <ComingSoon>
-            <ComingSoonTitle>Coming soon</ComingSoonTitle>
-            <ComingSoonDesc>This screen isn't built yet.</ComingSoonDesc>
-          </ComingSoon>
-        )}
+              <HomeGrid>
+                {visiblePhotos.map((p, i) => {
+                  const [hueA, hueB] = PLACE_HUES[i % PLACE_HUES.length]
+                  return (
+                    <PhotoCard key={p.id}>
+                      <PhotoImage $hueA={hueA} $hueB={hueB}>
+                        {p.imageUrl && <PhotoThumb src={p.imageUrl} alt={p.place} />}
+                        <PhotoLabel>PHOTO · {p.place}</PhotoLabel>
+                      </PhotoImage>
+                      <MetaRow>
+                        <div>
+                          <PlaceText>{p.place}</PlaceText>
+                          <DateText>
+                            {p.date} · {p.uploader}
+                          </DateText>
+                        </div>
+                        <SemesterBadge>{p.semesterLabel}</SemesterBadge>
+                      </MetaRow>
+                    </PhotoCard>
+                  )
+                })}
+              </HomeGrid>
+            </ScreenWrap>
+          ) : (
+            <ComingSoon>
+              <ComingSoonTitle>Coming soon</ComingSoonTitle>
+              <ComingSoonDesc>This screen isn't built yet.</ComingSoonDesc>
+            </ComingSoon>
+          )}
         </ContentInner>
       </ContentShell>
     </Page>

@@ -1,21 +1,19 @@
 import { useState } from "react";
-import styled from "styled-components";
 import SideBar, { type TabId } from "./layout/sideBar";
 import { GlassCard, PillButton } from "./uiPrimitives";
-import {
-  INK,
-  INK_FAINT,
-  INK_SOFT,
-  LAVENDER_BG,
-  LAVENDER_DEEP,
-  PLACE_HUES,
-} from "./theme";
-import { PHOTOS } from "./data/photo";
+import { PHOTOS } from "./data/Photo";
 
 const FILTERS: { id: string; label: string }[] = [
   { id: "all", label: "All" },
   { id: "2026-1", label: "2026 Sem 1" },
   { id: "2025-2", label: "2025 Sem 2" },
+];
+
+const PLACE_BG_CLASSES = [
+  "bg-place-0",
+  "bg-place-1",
+  "bg-place-2",
+  "bg-place-3",
 ];
 
 function App() {
@@ -28,7 +26,14 @@ function App() {
   );
 
   return (
-    <Page>
+    <div
+      className="relative min-h-screen w-full 
+    overflow-hidden 
+    bg-page 
+    bg-white 
+    [font-family:-apple-system,system-ui,sans-serif]
+    "
+    >
       <SideBar
         expanded={sidebarExpanded}
         activeTab={activeTab}
@@ -36,230 +41,88 @@ function App() {
         onNavigate={setActiveTab}
       />
 
-      <ContentShell $expanded={sidebarExpanded}>
-        <ContentInner>
+      <div
+        className={`relative z-[2] box-border flex justify-center px-8 pt-10 pb-25 transition-[margin-left,width] duration-[220ms] ease-in-out ${
+          sidebarExpanded
+            ? "ml-60 w-[calc(100%-240px)]"
+            : "ml-21 w-[calc(100%-84px)]"
+        }`}
+      >
+        <div className="w-full max-w-[1240px]">
           {activeTab === "home" ? (
-            <ScreenWrap>
-              <HomeHeader>
+            <div className="flex flex-col gap-7">
+              <div className="flex items-end justify-between flex-wrap gap-4">
                 <div>
-                  <ScreenTitle>Timeline</ScreenTitle>
-                  <ScreenDesc>업로드 된 사진들</ScreenDesc>
+                  <div className="text-[38px] font-extrabold text-[#0d0d0d] tracking-[-0.6px] break-keep">
+                    Timeline
+                  </div>
+                  <div className="text-base text-ink-soft font-normal mt-2 break-keep whitespace-normal max-w-[520px]">
+                    업로드 된 사진들
+                  </div>
                 </div>
-                <FilterRow>
+                <div className="flex gap-2">
                   {FILTERS.map((f) => (
                     <PillButton
                       key={f.id}
                       type="button"
-                      $active={activeFilter === f.id}
+                      active={activeFilter === f.id}
                       onClick={() => setActiveFilter(f.id)}
                     >
                       {f.label}
                     </PillButton>
                   ))}
-                </FilterRow>
-              </HomeHeader>
+                </div>
+              </div>
 
-              <HomeGrid>
-                {visiblePhotos.map((p, i) => {
-                  const [hueA, hueB] = PLACE_HUES[i % PLACE_HUES.length];
-                  return (
-                    <PhotoCard key={p.id}>
-                      <PhotoImage $hueA={hueA} $hueB={hueB}>
-                        {p.imageUrl && (
-                          <PhotoThumb src={p.imageUrl} alt={p.place} />
-                        )}
-                        <PhotoLabel>PHOTO · {p.place}</PhotoLabel>
-                      </PhotoImage>
-                      <MetaRow>
-                        <div>
-                          <PlaceText>{p.place}</PlaceText>
-                          <DateText>
-                            {p.date} · {p.uploader}
-                          </DateText>
+              <div className="grid [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))] gap-[22px]">
+                {visiblePhotos.map((p, i) => (
+                  <GlassCard
+                    key={p.id}
+                    className="overflow-hidden cursor-pointer"
+                  >
+                    <div
+                      className={`relative overflow-hidden flex items-end p-3 h-[200px] rounded-t-[28px] ${PLACE_BG_CLASSES[i % 4]}`}
+                    >
+                      {p.imageUrl && (
+                        <img
+                          src={p.imageUrl}
+                          alt={p.place}
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+                      )}
+                      <div className="relative z-[1] text-[11px] font-bold tracking-[0.4px] text-[rgba(60,40,70,0.55)] bg-[rgba(255,255,255,0.6)] px-2.5 py-1 rounded-full backdrop-blur-[6px] whitespace-nowrap">
+                        PHOTO · {p.place}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between px-[18px] pt-3.5 pb-[18px]">
+                      <div>
+                        <div className="text-base font-bold text-ink">
+                          {p.place}
                         </div>
-                        <SemesterBadge>{p.semesterLabel}</SemesterBadge>
-                      </MetaRow>
-                    </PhotoCard>
-                  );
-                })}
-              </HomeGrid>
-            </ScreenWrap>
+                        <div className="text-[13px] text-ink-faint mt-[3px]">
+                          {p.date} · {p.uploader}
+                        </div>
+                      </div>
+                      <div className="text-[11px] font-bold text-lavender-deep bg-lavender-bg px-2.5 py-1 rounded-full whitespace-nowrap">
+                        {p.semesterLabel}
+                      </div>
+                    </div>
+                  </GlassCard>
+                ))}
+              </div>
+            </div>
           ) : (
-            <ComingSoon>
-              <ComingSoonTitle>Coming soon</ComingSoonTitle>
-              <ComingSoonDesc>This screen isn't built yet.</ComingSoonDesc>
-            </ComingSoon>
+            <GlassCard className="p-10 text-center">
+              <div className="text-xl font-bold text-ink">Coming soon</div>
+              <div className="text-sm text-ink-soft mt-2">
+                This screen isn't built yet.
+              </div>
+            </GlassCard>
           )}
-        </ContentInner>
-      </ContentShell>
-    </Page>
+        </div>
+      </div>
+    </div>
   );
 }
 
 export default App;
-
-const Page = styled.div`
-  position: relative;
-  min-height: 100vh;
-  width: 100%;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 12% 18%, #daeaf1 0%, transparent 45%),
-    radial-gradient(circle at 85% 12%, #f9e8a2 0%, transparent 42%),
-    radial-gradient(circle at 78% 82%, #ffe6e6 0%, transparent 48%),
-    radial-gradient(circle at 25% 85%, #f9e8a2 0%, transparent 40%),
-    radial-gradient(circle at 55% 50%, #ffffff 0%, transparent 60%), #ffffff;
-  font-family: -apple-system, system-ui, sans-serif;
-`;
-
-const ContentShell = styled.div<{ $expanded: boolean }>`
-  position: relative;
-  z-index: 2;
-  box-sizing: border-box;
-  width: calc(100% - ${(p) => (p.$expanded ? 240 : 84)}px);
-  margin-left: ${(p) => (p.$expanded ? 240 : 84)}px;
-  transition:
-    margin-left 0.22s ease,
-    width 0.22s ease;
-  padding: 40px 32px 100px;
-  display: flex;
-  justify-content: center;
-`;
-
-const ContentInner = styled.div`
-  width: 100%;
-  max-width: 1240px;
-`;
-
-const ScreenWrap = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
-`;
-
-const HomeHeader = styled.div`
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
-`;
-
-const ScreenTitle = styled.div`
-  font-size: 38px;
-  font-weight: 800;
-  color: #0d0d0d;
-  letter-spacing: -0.6px;
-  word-break: keep-all;
-`;
-
-const ScreenDesc = styled.div`
-  font-size: 16px;
-  color: ${INK_SOFT};
-  font-weight: 400;
-  margin-top: 8px;
-  word-break: keep-all;
-  white-space: normal;
-  max-width: 520px;
-`;
-
-const FilterRow = styled.div`
-  display: flex;
-  gap: 8px;
-`;
-
-const HomeGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 22px;
-`;
-
-const PhotoCard = styled(GlassCard)`
-  overflow: hidden;
-  cursor: pointer;
-`;
-
-const PhotoImage = styled.div<{ $hueA: string; $hueB: string }>`
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: flex-end;
-  padding: 12px;
-  height: 200px;
-  border-radius: 28px 28px 0 0;
-  background: repeating-linear-gradient(
-    135deg,
-    ${(p) => p.$hueA} 0px,
-    ${(p) => p.$hueA} 14px,
-    ${(p) => p.$hueB} 14px,
-    ${(p) => p.$hueB} 28px
-  );
-`;
-
-const PhotoThumb = styled.img`
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-`;
-
-const PhotoLabel = styled.div`
-  position: relative;
-  z-index: 1;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  color: rgba(60, 40, 70, 0.55);
-  background: rgba(255, 255, 255, 0.6);
-  padding: 4px 10px;
-  border-radius: 999px;
-  backdrop-filter: blur(6px);
-  white-space: nowrap;
-`;
-
-const MetaRow = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 18px 18px;
-`;
-
-const PlaceText = styled.div`
-  font-size: 16px;
-  font-weight: 700;
-  color: ${INK};
-`;
-
-const DateText = styled.div`
-  font-size: 13px;
-  color: ${INK_FAINT};
-  margin-top: 3px;
-`;
-
-const SemesterBadge = styled.div`
-  font-size: 11px;
-  font-weight: 700;
-  color: ${LAVENDER_DEEP};
-  background: ${LAVENDER_BG};
-  padding: 4px 10px;
-  border-radius: 999px;
-  white-space: nowrap;
-`;
-
-const ComingSoon = styled(GlassCard)`
-  padding: 40px;
-  text-align: center;
-`;
-
-const ComingSoonTitle = styled.div`
-  font-size: 20px;
-  font-weight: 700;
-  color: ${INK};
-`;
-
-const ComingSoonDesc = styled.div`
-  font-size: 14px;
-  color: ${INK_SOFT};
-  margin-top: 8px;
-`;

@@ -1,5 +1,5 @@
 import ComingSoon from "./ComingSoon";
 
-export default function MapView() {
+export default function AnonymousTagging() {
   return <ComingSoon />;
 }

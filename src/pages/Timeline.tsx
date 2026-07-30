@@ -1,18 +1,12 @@
 import { useState } from "react";
-import { GlassCard, PillButton } from "../uiPrimitives";
+import { PillButton } from "../uiPrimitives";
 import { PHOTOS } from "../data/Photo";
+import PhotoCard from "../components/PhotoCard";
 
 const FILTERS: { id: string; label: string }[] = [
   { id: "all", label: "All" },
   { id: "2026-1", label: "2026 Sem 1" },
   { id: "2025-2", label: "2025 Sem 2" },
-];
-
-const PLACE_BG_CLASSES = [
-  "bg-place-0",
-  "bg-place-1",
-  "bg-place-2",
-  "bg-place-3",
 ];
 
 export default function Timeline() {
@@ -49,33 +43,7 @@ export default function Timeline() {
 
       <div className="grid [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))] gap-[22px]">
         {visiblePhotos.map((p, i) => (
-          <GlassCard key={p.id} className="overflow-hidden cursor-pointer">
-            <div
-              className={`relative overflow-hidden flex items-end p-3 h-[200px] rounded-t-[28px] ${PLACE_BG_CLASSES[i % 4]}`}
-            >
-              {p.imageUrl && (
-                <img
-                  src={p.imageUrl}
-                  alt={p.place}
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-              )}
-              <div className="relative z-[1] text-[11px] font-bold tracking-[0.4px] text-[rgba(60,40,70,0.55)] bg-[rgba(255,255,255,0.6)] px-2.5 py-1 rounded-full backdrop-blur-[6px] whitespace-nowrap">
-                PHOTO · {p.place}
-              </div>
-            </div>
-            <div className="flex items-center justify-between px-[18px] pt-3.5 pb-[18px]">
-              <div>
-                <div className="text-base font-bold text-ink">{p.place}</div>
-                <div className="text-[13px] text-ink-faint mt-[3px]">
-                  {p.date} · {p.uploader}
-                </div>
-              </div>
-              <div className="text-[11px] font-bold text-lavender-deep bg-lavender-bg px-2.5 py-1 rounded-full whitespace-nowrap">
-                {p.semesterLabel}
-              </div>
-            </div>
-          </GlassCard>
+          <PhotoCard key={p.id} photo={p} index={i} />
         ))}
       </div>
     </div>

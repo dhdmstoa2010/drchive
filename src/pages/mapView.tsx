@@ -1,5 +1,0 @@
-import ComingSoon from "./ComingSoon";
-
-export default function MapView() {
-  return <ComingSoon />;
-}

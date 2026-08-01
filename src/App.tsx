@@ -2,10 +2,6 @@ import { useState } from "react";
 import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import SideBar, { type TabId } from "./layout/sideBar";
 import Timeline from "./pages/Timeline";
-import MapView from "./pages/mapView";
-import TimeCapsule from "./pages/timeCapsule";
-import AiChronicle from "./pages/aiChronicle";
-import AnonymousTagging from "./pages/anonymousTagging";
 
 const TAB_PATHS: Record<TabId, string> = {
   home: "/",
@@ -16,9 +12,7 @@ const TAB_PATHS: Record<TabId, string> = {
 };
 
 function tabFromPathname(pathname: string): TabId {
-  const entry = Object.entries(TAB_PATHS).find(
-    ([, path]) => path === pathname,
-  );
+  const entry = Object.entries(TAB_PATHS).find(([, path]) => path === pathname);
   return (entry?.[0] as TabId) ?? "home";
 }
 
@@ -54,10 +48,6 @@ function App() {
         <div className="w-full max-w-[1240px]">
           <Routes>
             <Route path="/" element={<Timeline />} />
-            <Route path="/map" element={<MapView />} />
-            <Route path="/capsule" element={<TimeCapsule />} />
-            <Route path="/chronicle" element={<AiChronicle />} />
-            <Route path="/tag" element={<AnonymousTagging />} />
           </Routes>
         </div>
       </div>

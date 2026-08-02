@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { PillButton } from "../uiPrimitives";
+import { PillButton } from "../components/ui/PillButton";
 import { PHOTOS } from "../data/Photo";
 import PhotoCard from "../components/PhotoCard";
 

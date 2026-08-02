@@ -24,7 +24,8 @@ function App() {
 
   return (
     <div
-      className="relative min-h-screen w-full
+      className="
+    relative min-h-screen w-full
     overflow-hidden
     bg-page
     bg-white
@@ -39,11 +40,20 @@ function App() {
       />
 
       <div
-        className={`relative z-[2] box-border flex justify-center px-8 pt-10 pb-25 transition-[margin-left,width] duration-[220ms] ease-in-out ${
-          sidebarExpanded
-            ? "ml-60 w-[calc(100%-240px)]"
-            : "ml-21 w-[calc(100%-84px)]"
-        }`}
+        className={`
+      relative z-[2] 
+      box-border flex 
+      justify-center 
+      px-8
+       pt-10 
+      pb-25 
+      transition-[margin-left,width]
+       duration-[220ms] 
+       ease-in-out ${
+         sidebarExpanded
+           ? "ml-60 w-[calc(100%-240px)]"
+           : "ml-21 w-[calc(100%-84px)]"
+       }`}
       >
         <div className="w-full max-w-[1240px]">
           <Routes>

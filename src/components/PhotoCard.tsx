@@ -1,4 +1,4 @@
-import { GlassCard } from "../uiPrimitives";
+import { GlassCard } from "./ui/GlassCard";
 import type { Photo } from "../data/Photo";
 
 const PLACE_BG_CLASSES = [
@@ -17,7 +17,13 @@ export default function PhotoCard({ photo, index }: PhotoCardProps) {
   return (
     <GlassCard className="overflow-hidden cursor-pointer">
       <div
-        className={`relative overflow-hidden flex items-end p-3 h-[200px] rounded-t-[28px] ${PLACE_BG_CLASSES[index % 4]}`}
+        className={`relative 
+          overflow-hidden 
+          flex items-end 
+          p-3
+          h-[200px] 
+          rounded-t-[28px] 
+          ${PLACE_BG_CLASSES[index % 4]}`}
       >
         {photo.imageUrl && (
           <img
@@ -26,7 +32,20 @@ export default function PhotoCard({ photo, index }: PhotoCardProps) {
             className="absolute inset-0 w-full h-full object-cover"
           />
         )}
-        <div className="relative z-[1] text-[11px] font-bold tracking-[0.4px] text-[rgba(60,40,70,0.55)] bg-[rgba(255,255,255,0.6)] px-2.5 py-1 rounded-full backdrop-blur-[6px] whitespace-nowrap">
+        <div
+          className="relative 
+        z-[1] 
+        text-[11px] 
+        font-bold 
+        tracking-[0.4px]
+         text-[rgba(60,40,70,0.55)] 
+         bg-[rgba(255,255,255,0.6)] 
+         px-2.5 
+         py-1 
+         rounded-full
+          backdrop-blur-[6px] 
+          whitespace-nowrap"
+        >
           PHOTO · {photo.place}
         </div>
       </div>
@@ -37,7 +56,16 @@ export default function PhotoCard({ photo, index }: PhotoCardProps) {
             {photo.date} · {photo.uploader}
           </div>
         </div>
-        <div className="text-[11px] font-bold text-lavender-deep bg-lavender-bg px-2.5 py-1 rounded-full whitespace-nowrap">
+        <div
+          className="text-[11px] 
+        font-bold 
+        text-lavender-deep
+        bg-lavender-bg
+        px-2.5 
+        py-1
+        rounded-full
+        whitespace-nowrap"
+        >
           {photo.semesterLabel}
         </div>
       </div>

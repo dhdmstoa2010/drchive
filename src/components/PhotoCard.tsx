@@ -1,12 +1,5 @@
 import { GlassCard } from "./ui/GlassCard";
-import type { Photo } from "../data/Photo";
-
-const PLACE_BG_CLASSES = [
-  "bg-place-0",
-  "bg-place-1",
-  "bg-place-2",
-  "bg-place-3",
-];
+import { PLACE_BG_CLASSES, type Photo } from "../data/Photo";
 
 type PhotoCardProps = {
   photo: Photo;

@@ -1,3 +1,10 @@
+export const PLACE_BG_CLASSES = [
+  "bg-place-0",
+  "bg-place-1",
+  "bg-place-2",
+  "bg-place-3",
+];
+
 export type Photo = {
   id: number;
   place: string;

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import SideBar, { type TabId } from "./layout/sideBar";
 import Timeline from "./pages/Timeline";
+import MapView from "./pages/MapView";
 
 const TAB_PATHS: Record<TabId, string> = {
   home: "/",
@@ -58,6 +59,7 @@ function App() {
         <div className="w-full max-w-[1240px]">
           <Routes>
             <Route path="/" element={<Timeline />} />
+            <Route path="/map" element={<MapView />} />
           </Routes>
         </div>
       </div>

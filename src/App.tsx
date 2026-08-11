@@ -3,6 +3,7 @@ import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import SideBar, { type TabId } from "./layout/sideBar";
 import Timeline from "./pages/Timeline";
 import MapView from "./pages/MapView";
+import ComingSoon from "./pages/ComingSoon";
 
 const TAB_PATHS: Record<TabId, string> = {
   home: "/",
@@ -60,6 +61,33 @@ function App() {
           <Routes>
             <Route path="/" element={<Timeline />} />
             <Route path="/map" element={<MapView />} />
+            <Route
+              path="/capsule"
+              element={
+                <ComingSoon
+                  title="Time Capsule"
+                  description="추억을 담아두었다가 나중에 열어볼 수 있는 타임캡슐 기능이에요."
+                />
+              }
+            />
+            <Route
+              path="/chronicle"
+              element={
+                <ComingSoon
+                  title="AI Chronicle"
+                  description="업로드된 사진들을 AI가 정리해 이야기로 보여주는 기능이에요."
+                />
+              }
+            />
+            <Route
+              path="/tag"
+              element={
+                <ComingSoon
+                  title="Anonymous Tagging"
+                  description="사진 속 친구를 익명으로 태그할 수 있는 기능이에요."
+                />
+              }
+            />
           </Routes>
         </div>
       </div>

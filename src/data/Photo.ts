@@ -59,11 +59,4 @@ export const PHOTOS: Photo[] = [
     uploader: "Doyoon, Class 1",
     semesterLabel: "2025-2",
   },
-  {
-    id: 7,
-    place: "Front Gate",
-    date: "2025.09.01",
-    uploader: "Doyoon, Class 1",
-    semesterLabel: "2025-2",
-  },
 ];

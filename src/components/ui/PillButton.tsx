@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, HTMLAttributes } from "react";
+import type { ButtonHTMLAttributes } from "react";
 
 type PillButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   active?: boolean;

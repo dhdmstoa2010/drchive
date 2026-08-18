@@ -29,14 +29,18 @@ export const StyledCanvas = styled.canvas`
 `;
 
 export const UndoButton = styled.button`
+  font-family: inherit;
   align-self: flex-start;
   font-size: 12px;
   font-weight: 600;
   color: ${colors.inkFaint};
+  background: none;
+  border: none;
   cursor: pointer;
 
   &:disabled {
     opacity: 0.4;
+    cursor: default;
   }
 `;
 
@@ -53,19 +57,24 @@ export const ButtonRow = styled.div`
 `;
 
 export const CancelButton = styled.button`
+  font-family: inherit;
   font-size: 14px;
   font-weight: 600;
   color: ${colors.inkFaint};
   padding: 0 12px;
+  background: none;
+  border: none;
   cursor: pointer;
 `;
 
 export const ConfirmButton = styled.button`
+  font-family: inherit;
   font-size: 14px;
   font-weight: 700;
   color: #fff;
   background: ${colors.lavenderDeep};
   padding: 10px 20px;
   border-radius: 9999px;
+  border: none;
   cursor: pointer;
 `;

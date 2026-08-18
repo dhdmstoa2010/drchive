@@ -75,9 +75,12 @@ export const HeaderTitle = styled.div`
 `;
 
 export const MarkAllButton = styled.button`
+  font-family: inherit;
   font-size: 12px;
   font-weight: 600;
   color: ${colors.lavenderDeep};
+  background: none;
+  border: none;
   cursor: pointer;
 `;
 
@@ -89,9 +92,11 @@ export const EmptyText = styled.div`
 `;
 
 export const NotificationItem = styled.button<{ $read: boolean }>`
+  font-family: inherit;
   text-align: left;
   border-radius: 16px;
   padding: 10px;
+  border: none;
   cursor: pointer;
   background: ${(props) =>
     props.$read ? colors.glassBgSoft : colors.lavenderBg};

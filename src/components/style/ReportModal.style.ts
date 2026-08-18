@@ -8,9 +8,18 @@ const fieldStyles = css`
   border-radius: 16px;
   border: 1.5px solid ${colors.glassBorder};
   background: ${colors.glassBgSoft};
+  font-family: inherit;
   font-size: 14px;
   color: ${colors.ink};
   outline: none;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
+
+  &:focus {
+    border-color: ${colors.lavender};
+    background: #fff;
+  }
 `;
 
 export const Title = styled.div`
@@ -40,6 +49,7 @@ export const Form = styled.form`
 
 export const Select = styled.select`
   ${fieldStyles}
+  cursor: pointer;
 `;
 
 export const Textarea = styled.textarea`
@@ -55,9 +65,12 @@ export const ButtonRow = styled.div`
 `;
 
 export const CancelButton = styled.button`
+  font-family: inherit;
   font-size: 14px;
   font-weight: 600;
   color: ${colors.inkFaint};
   padding: 0 12px;
+  background: none;
+  border: none;
   cursor: pointer;
 `;

@@ -21,19 +21,24 @@ export const ButtonRow = styled.div`
 `;
 
 export const CancelButton = styled.button`
+  font-family: inherit;
   font-size: 14px;
   font-weight: 600;
   color: ${colors.inkFaint};
   padding: 0 12px;
+  background: none;
+  border: none;
   cursor: pointer;
 `;
 
 export const ConfirmButton = styled.button<{ $danger: boolean }>`
+  font-family: inherit;
   font-size: 14px;
   font-weight: 700;
   color: #fff;
   padding: 10px 20px;
   border-radius: 9999px;
+  border: none;
   cursor: pointer;
   background: ${(props) =>
     props.$danger ? colors.coralDeep : colors.lavenderDeep};

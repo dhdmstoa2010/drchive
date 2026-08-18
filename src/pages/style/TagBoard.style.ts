@@ -1,4 +1,5 @@
 import styled from "@emotion/styled";
+import { css } from "@emotion/react";
 import { GlassCard } from "../../components/ui/GlassCard";
 import { colors } from "../../styles/theme";
 
@@ -106,9 +107,57 @@ export const FieldLabel = styled.div`
   margin-bottom: 6px;
 `;
 
-export const FileInput = styled.input`
-  font-size: 14px;
-  color: ${colors.inkSoft};
+export const HiddenFileInput = styled.input`
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+`;
+
+export const UploadZone = styled.label<{ $hasPreview: boolean }>`
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 140px;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 1.5px dashed ${colors.glassBorder};
+  background: ${colors.glassBgSoft};
+  color: ${colors.inkFaint};
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
+
+  &:hover {
+    border-color: ${colors.lavender};
+    background: ${colors.lavenderBg};
+  }
+
+  ${({ $hasPreview }) =>
+    $hasPreview &&
+    css`
+      border-style: solid;
+      border-color: ${colors.glassBorder};
+    `}
+`;
+
+export const UploadIcon = styled.span`
+  font-size: 22px;
+  line-height: 1;
+`;
+
+export const UploadHint = styled.span`
+  font-size: 13px;
+  font-weight: 600;
 `;
 
 export const PhotoRow = styled.div`
@@ -120,10 +169,17 @@ export const PhotoRow = styled.div`
 export const PhotoThumbButton = styled.button`
   width: 80px;
   height: 80px;
+  padding: 0;
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
+  background: none;
   border: 1.5px solid ${colors.glassBorder};
+  transition: opacity 150ms ease;
+
+  &:hover {
+    opacity: 0.85;
+  }
 `;
 
 export const ThumbImage = styled.img`
@@ -156,16 +212,22 @@ export const ActionRow = styled.div`
 `;
 
 export const BlockButton = styled.button`
+  font-family: inherit;
   font-size: 12px;
   font-weight: 600;
   color: ${colors.inkFaint};
+  background: none;
+  border: none;
   cursor: pointer;
 `;
 
 export const ReportButton = styled.button`
+  font-family: inherit;
   font-size: 12px;
   font-weight: 600;
   color: ${colors.coralDeep};
+  background: none;
+  border: none;
   cursor: pointer;
 `;
 
@@ -260,16 +322,19 @@ export const PendingItemActions = styled.div`
 `;
 
 export const ApproveButton = styled.button`
+  font-family: inherit;
   font-size: 12px;
   font-weight: 700;
   color: white;
   background: ${colors.lavenderDeep};
   padding: 6px 12px;
   border-radius: 9999px;
+  border: none;
   cursor: pointer;
 `;
 
 export const RejectButton = styled.button`
+  font-family: inherit;
   font-size: 12px;
   font-weight: 700;
   color: ${colors.inkSoft};

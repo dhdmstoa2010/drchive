@@ -78,11 +78,25 @@ export const EditFieldsRow = styled.div`
 const fieldStyles = css`
   padding: 10px 16px;
   border-radius: 16px;
-  border: 1.5px solid ${colors.glassBorder};
-  background: ${colors.glassBgSoft};
+  border: 1.5px solid rgba(70, 55, 50, 0.16);
+  background: #fff;
+  font-family: inherit;
   font-size: 14px;
   color: ${colors.ink};
   outline: none;
+  box-shadow: 0 1px 2px rgba(20, 20, 30, 0.05);
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+
+  &:hover {
+    border-color: ${colors.lavender};
+  }
+
+  &:focus {
+    border-color: ${colors.lavender};
+    box-shadow: 0 0 0 3px ${colors.lavenderBg};
+  }
 `;
 
 export const FieldInput = styled.input`
@@ -91,6 +105,7 @@ export const FieldInput = styled.input`
 
 export const FieldSelect = styled.select`
   ${fieldStyles}
+  cursor: pointer;
 `;
 
 export const ProfileActionsRow = styled.div`

@@ -11,7 +11,6 @@ import {
   TextInput,
   HiddenFileInput,
   UploadZone,
-  UploadIcon,
   UploadHint,
   UploadSubHint,
   PreviewImage,
@@ -123,11 +122,12 @@ export function PhotoUploadModal({ open, onClose }: PhotoUploadModalProps) {
           {preview ? (
             <>
               <PreviewImage src={preview} alt="미리보기" />
-              <ChangeOverlay className="change-overlay">다른 사진 선택</ChangeOverlay>
+              <ChangeOverlay className="change-overlay">
+                다른 사진 선택
+              </ChangeOverlay>
             </>
           ) : (
             <>
-              <UploadIcon>📷</UploadIcon>
               <UploadHint>클릭해서 사진 선택</UploadHint>
               <UploadSubHint>JPG, PNG</UploadSubHint>
             </>

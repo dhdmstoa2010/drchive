@@ -7,6 +7,7 @@ import { useAuth } from "../hooks/useAuth";
 import { usePhotos } from "../hooks/usePhotos";
 import { useTags } from "../hooks/useTags";
 import { useReports } from "../hooks/useReports";
+import { fileToResizedDataUrl } from "../lib/image";
 import type { TagPost } from "../types";
 import {
   PageWrapper,
@@ -23,7 +24,10 @@ import {
   Subtitle,
   FormSection,
   FieldLabel,
-  FileInput,
+  HiddenFileInput,
+  UploadZone,
+  UploadIcon,
+  UploadHint,
   PhotoRow,
   PhotoThumbButton,
   ThumbImage,
@@ -75,13 +79,11 @@ function NewPostModal({
     onClose();
   }
 
-  function handleFile(e: ChangeEvent<HTMLInputElement>) {
+  async function handleFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () =>
-      setSelectedImage({ imageUrl: reader.result as string });
-    reader.readAsDataURL(file);
+    const imageUrl = await fileToResizedDataUrl(file);
+    setSelectedImage({ imageUrl });
   }
 
   return (
@@ -96,7 +98,11 @@ function NewPostModal({
         <FormSection>
           <div>
             <FieldLabel>새 이미지 업로드</FieldLabel>
-            <FileInput type="file" accept="image/*" onChange={handleFile} />
+            <UploadZone $hasPreview={false}>
+              <HiddenFileInput type="file" accept="image/*" onChange={handleFile} />
+              <UploadIcon>📷</UploadIcon>
+              <UploadHint>클릭해서 사진 선택</UploadHint>
+            </UploadZone>
           </div>
 
           {myPhotos.length > 0 && (

@@ -24,6 +24,7 @@ export const Panel = styled.div<{ $maxWidth: string }>`
   max-width: ${(props) => props.$maxWidth};
   max-height: 90vh;
   overflow-y: auto;
+  overflow-x: hidden;
   border-radius: 28px;
   border: 1.5px solid ${colors.glassBorder};
   background: #fff;

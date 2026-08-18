@@ -1,5 +1,5 @@
 import type { HTMLAttributes } from "react";
-import { SHIMMER_HOVER } from "./shimmerHover";
+import { Card } from "./style/GlassCard.style";
 
 type GlassCardProps = HTMLAttributes<HTMLDivElement> & {
   interactive?: boolean;
@@ -10,21 +10,5 @@ export function GlassCard({
   interactive = true,
   ...props
 }: GlassCardProps) {
-  return (
-    <div
-      className={`relative
-        overflow-hidden
-        rounded-[28px]
-        border-[1.5px]
-        border-glass-border
-        bg-glass
-        bg-glass-bg
-        backdrop-blur-[11px]
-        backdrop-saturate-[240%]
-        shadow-glass
-        ${interactive ? SHIMMER_HOVER : ""} ${className}
-        `}
-      {...props}
-    />
-  );
+  return <Card className={className} $interactive={interactive} {...props} />;
 }

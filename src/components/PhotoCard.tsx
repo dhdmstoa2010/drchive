@@ -1,5 +1,14 @@
-import { GlassCard } from "./ui/GlassCard";
-import { PLACE_BG_CLASSES, type Photo } from "../data/Photo";
+import type { Photo } from "../types";
+import {
+  StyledCard,
+  ImageWrap,
+  PhotoImg,
+  PlaceTag,
+  CardFooter,
+  PlaceName,
+  PlaceMeta,
+  SemesterTag,
+} from "./style/PhotoCard.style";
 
 type PhotoCardProps = {
   photo: Photo;
@@ -8,60 +17,22 @@ type PhotoCardProps = {
 
 export default function PhotoCard({ photo, index }: PhotoCardProps) {
   return (
-    <GlassCard className="overflow-hidden cursor-pointer">
-      <div
-        className={`relative 
-          overflow-hidden 
-          flex items-end 
-          p-3
-          h-[200px] 
-          rounded-t-[28px] 
-          ${PLACE_BG_CLASSES[index % 4]}`}
-      >
+    <StyledCard>
+      <ImageWrap $placeIndex={index}>
         {photo.imageUrl && (
-          <img
-            src={photo.imageUrl}
-            alt={photo.place}
-            className="absolute inset-0 w-full h-full object-cover"
-          />
+          <PhotoImg src={photo.imageUrl} alt={photo.place} />
         )}
-        <div
-          className="relative 
-        z-[1] 
-        text-[11px] 
-        font-bold 
-        tracking-[0.4px]
-         text-[rgba(60,40,70,0.55)] 
-         bg-[rgba(255,255,255,0.6)] 
-         px-2.5 
-         py-1 
-         rounded-full
-          backdrop-blur-[6px] 
-          whitespace-nowrap"
-        >
-          PHOTO · {photo.place}
-        </div>
-      </div>
-      <div className="flex items-center justify-between px-[18px] pt-3.5 pb-[18px]">
+        <PlaceTag>PHOTO · {photo.place}</PlaceTag>
+      </ImageWrap>
+      <CardFooter>
         <div>
-          <div className="text-base font-bold text-ink">{photo.place}</div>
-          <div className="text-[13px] text-ink-faint mt-[3px]">
+          <PlaceName>{photo.place}</PlaceName>
+          <PlaceMeta>
             {photo.date} · {photo.uploader}
-          </div>
+          </PlaceMeta>
         </div>
-        <div
-          className="text-[11px] 
-        font-bold 
-        text-lavender-deep
-        bg-lavender-bg
-        px-2.5 
-        py-1
-        rounded-full
-        whitespace-nowrap"
-        >
-          {photo.semesterLabel}
-        </div>
-      </div>
-    </GlassCard>
+        <SemesterTag>{photo.semesterLabel}</SemesterTag>
+      </CardFooter>
+    </StyledCard>
   );
 }

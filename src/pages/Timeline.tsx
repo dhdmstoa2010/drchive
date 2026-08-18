@@ -1,7 +1,17 @@
 import { useState } from "react";
 import { PillButton } from "../components/ui/PillButton";
-import { PHOTOS } from "../data/Photo";
 import PhotoCard from "../components/PhotoCard";
+import { PhotoUploadModal } from "../components/PhotoUploadModal";
+import { usePhotos } from "../hooks/usePhotos";
+import { useReports } from "../hooks/useReports";
+import {
+  PageWrapper,
+  HeaderRow,
+  PageTitle,
+  PageSubtitle,
+  FilterRow,
+  PhotoGrid,
+} from "./style/Timeline.style";
 
 const FILTERS: { id: string; label: string }[] = [
   { id: "all", label: "All" },
@@ -10,24 +20,25 @@ const FILTERS: { id: string; label: string }[] = [
 ];
 
 export default function Timeline() {
+  const { photos } = usePhotos();
+  const { isBlocked } = useReports();
   const [activeFilter, setActiveFilter] = useState("all");
+  const [uploadOpen, setUploadOpen] = useState(false);
 
-  const visiblePhotos = PHOTOS.filter(
-    (p) => activeFilter === "all" || p.semesterLabel === activeFilter,
+  const visiblePhotos = photos.filter(
+    (p) =>
+      (activeFilter === "all" || p.semesterLabel === activeFilter) &&
+      !isBlocked(p.uploaderId),
   );
 
   return (
-    <div className="flex flex-col gap-7">
-      <div className="flex items-end justify-between flex-wrap gap-4">
+    <PageWrapper>
+      <HeaderRow>
         <div>
-          <div className="text-[38px] font-extrabold text-[#0d0d0d] tracking-[-0.6px] break-keep">
-            Timeline
-          </div>
-          <div className="text-base text-ink-soft font-normal mt-2 break-keep whitespace-normal max-w-[520px]">
-            업로드 된 사진들
-          </div>
+          <PageTitle>Timeline</PageTitle>
+          <PageSubtitle>업로드 된 사진들</PageSubtitle>
         </div>
-        <div className="flex gap-2">
+        <FilterRow>
           {FILTERS.map((f) => (
             <PillButton
               key={f.id}
@@ -38,14 +49,19 @@ export default function Timeline() {
               {f.label}
             </PillButton>
           ))}
-        </div>
-      </div>
+          <PillButton type="button" onClick={() => setUploadOpen(true)}>
+            + 업로드
+          </PillButton>
+        </FilterRow>
+      </HeaderRow>
 
-      <div className="grid [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))] gap-[22px]">
+      <PhotoGrid>
         {visiblePhotos.map((p, i) => (
           <PhotoCard key={p.id} photo={p} index={i} />
         ))}
-      </div>
-    </div>
+      </PhotoGrid>
+
+      <PhotoUploadModal open={uploadOpen} onClose={() => setUploadOpen(false)} />
+    </PageWrapper>
   );
 }

@@ -8,9 +8,18 @@ const fieldStyles = css`
   border-radius: 16px;
   border: 1.5px solid ${colors.glassBorder};
   background: ${colors.glassBgSoft};
+  font-family: inherit;
   font-size: 14px;
   color: ${colors.ink};
   outline: none;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
+
+  &:focus {
+    border-color: ${colors.lavender};
+    background: #fff;
+  }
 `;
 
 export const Title = styled.div`
@@ -28,28 +37,98 @@ export const Subtitle = styled.div`
 export const Form = styled.form`
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   margin-top: 20px;
 `;
 
 export const Select = styled.select`
   ${fieldStyles}
+  cursor: pointer;
 `;
 
 export const TextInput = styled.input`
   ${fieldStyles}
 `;
 
-export const FileInput = styled.input`
-  font-size: 14px;
-  color: ${colors.inkSoft};
+export const HiddenFileInput = styled.input`
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+`;
+
+export const UploadZone = styled.label<{ $hasPreview: boolean }>`
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 180px;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 1.5px dashed ${colors.glassBorder};
+  background: ${colors.glassBgSoft};
+  color: ${colors.inkFaint};
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
+
+  &:hover {
+    border-color: ${colors.lavender};
+    background: ${colors.lavenderBg};
+  }
+
+  ${({ $hasPreview }) =>
+    $hasPreview &&
+    css`
+      border-style: solid;
+      border-color: ${colors.glassBorder};
+    `}
+
+  &:hover .change-overlay {
+    opacity: 1;
+  }
+`;
+
+export const UploadIcon = styled.span`
+  font-size: 24px;
+  line-height: 1;
+`;
+
+export const UploadHint = styled.span`
+  font-size: 13px;
+  font-weight: 600;
+`;
+
+export const UploadSubHint = styled.span`
+  font-size: 11px;
+  color: ${colors.inkFaint};
 `;
 
 export const PreviewImage = styled.img`
   width: 100%;
-  height: 180px;
+  height: 100%;
   object-fit: cover;
-  border-radius: 16px;
+`;
+
+export const ChangeOverlay = styled.div`
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 8px 0;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(0deg, rgba(20, 20, 30, 0.6), transparent);
+  opacity: 0;
+  transition: opacity 150ms ease;
 `;
 
 export const ErrorText = styled.div`
@@ -66,9 +145,12 @@ export const ButtonRow = styled.div`
 `;
 
 export const CancelButton = styled.button`
+  font-family: inherit;
   font-size: 14px;
   font-weight: 600;
   color: ${colors.inkFaint};
   padding: 0 12px;
+  background: none;
+  border: none;
   cursor: pointer;
 `;

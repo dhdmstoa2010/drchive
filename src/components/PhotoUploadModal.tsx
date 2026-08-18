@@ -9,8 +9,13 @@ import {
   Form,
   Select,
   TextInput,
-  FileInput,
+  HiddenFileInput,
+  UploadZone,
+  UploadIcon,
+  UploadHint,
+  UploadSubHint,
   PreviewImage,
+  ChangeOverlay,
   ErrorText,
   ButtonRow,
   CancelButton,
@@ -113,8 +118,21 @@ export function PhotoUploadModal({ open, onClose }: PhotoUploadModalProps) {
             </option>
           ))}
         </Select>
-        <FileInput type="file" accept="image/*" onChange={handleFile} />
-        {preview && <PreviewImage src={preview} alt="미리보기" />}
+        <UploadZone $hasPreview={!!preview}>
+          <HiddenFileInput type="file" accept="image/*" onChange={handleFile} />
+          {preview ? (
+            <>
+              <PreviewImage src={preview} alt="미리보기" />
+              <ChangeOverlay className="change-overlay">다른 사진 선택</ChangeOverlay>
+            </>
+          ) : (
+            <>
+              <UploadIcon>📷</UploadIcon>
+              <UploadHint>클릭해서 사진 선택</UploadHint>
+              <UploadSubHint>JPG, PNG</UploadSubHint>
+            </>
+          )}
+        </UploadZone>
         {error && <ErrorText>{error}</ErrorText>}
         <ButtonRow>
           <CancelButton type="button" onClick={handleClose}>

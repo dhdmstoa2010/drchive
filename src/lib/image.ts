@@ -1,5 +1,3 @@
-// Firestore documents are capped at 1MiB, so any image we embed as a data URL
-// needs to be downscaled/compressed first — a raw phone photo easily blows past that.
 const MAX_DIMENSION = 1280;
 const JPEG_QUALITY = 0.82;
 
@@ -17,7 +15,10 @@ export function resizeImage(
   maxDimension = MAX_DIMENSION,
   quality = JPEG_QUALITY,
 ): string {
-  const scale = Math.min(1, maxDimension / Math.max(img.naturalWidth, img.naturalHeight));
+  const scale = Math.min(
+    1,
+    maxDimension / Math.max(img.naturalWidth, img.naturalHeight),
+  );
   const width = Math.round(img.naturalWidth * scale);
   const height = Math.round(img.naturalHeight * scale);
 

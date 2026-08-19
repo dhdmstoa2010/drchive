@@ -2,19 +2,25 @@ import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthLayout } from "../layout/AuthLayout";
 import { useAuth } from "../hooks/useAuth";
+import { Dropdown } from "../components/ui/Dropdown";
 import {
   AuthCard,
   CardTitle,
   CardSubtitle,
   FormEl,
   StyledInput,
-  StyledSelect,
   SelectRow,
   ErrorText,
   SubmitButton,
   FooterText,
   FooterLink,
 } from "./style/Signup.style";
+
+const GRADE_OPTIONS = [1, 2, 3].map((g) => ({ value: g, label: `${g}학년` }));
+const CLASS_OPTIONS = [1, 2, 3, 4, 5, 6].map((c) => ({
+  value: c,
+  label: `${c}반`,
+}));
 
 export default function Signup() {
   const { signup } = useAuth();
@@ -55,26 +61,12 @@ export default function Signup() {
             onChange={(e) => setName(e.target.value)}
           />
           <SelectRow>
-            <StyledSelect
-              value={grade}
-              onChange={(e) => setGrade(Number(e.target.value))}
-            >
-              {[1, 2, 3].map((g) => (
-                <option key={g} value={g}>
-                  {g}학년
-                </option>
-              ))}
-            </StyledSelect>
-            <StyledSelect
+            <Dropdown value={grade} onChange={setGrade} options={GRADE_OPTIONS} />
+            <Dropdown
               value={className}
-              onChange={(e) => setClassName(Number(e.target.value))}
-            >
-              {[1, 2, 3, 4, 5, 6].map((c) => (
-                <option key={c} value={c}>
-                  {c}반
-                </option>
-              ))}
-            </StyledSelect>
+              onChange={setClassName}
+              options={CLASS_OPTIONS}
+            />
           </SelectRow>
           <StyledInput
             type="email"

@@ -1,6 +1,6 @@
 import styled from "@emotion/styled";
-import { css } from "@emotion/react";
 import { colors, gradients } from "../../styles/theme";
+import { fieldStyles, selectStyles } from "../../styles/select";
 import { GlassCard } from "../../components/ui/GlassCard";
 import { PillButton } from "../../components/ui/PillButton";
 
@@ -75,37 +75,14 @@ export const EditFieldsRow = styled.div`
   flex-wrap: wrap;
 `;
 
-const fieldStyles = css`
-  padding: 10px 16px;
-  border-radius: 16px;
-  border: 1.5px solid rgba(70, 55, 50, 0.16);
-  background: #fff;
-  font-family: inherit;
-  font-size: 14px;
-  color: ${colors.ink};
-  outline: none;
-  box-shadow: 0 1px 2px rgba(20, 20, 30, 0.05);
-  transition:
-    border-color 150ms ease,
-    box-shadow 150ms ease;
-
-  &:hover {
-    border-color: ${colors.lavender};
-  }
-
-  &:focus {
-    border-color: ${colors.lavender};
-    box-shadow: 0 0 0 3px ${colors.lavenderBg};
-  }
-`;
-
 export const FieldInput = styled.input`
   ${fieldStyles}
+  width: auto;
 `;
 
 export const FieldSelect = styled.select`
-  ${fieldStyles}
-  cursor: pointer;
+  ${selectStyles}
+  width: auto;
 `;
 
 export const ProfileActionsRow = styled.div`

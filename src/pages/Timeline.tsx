@@ -2,8 +2,10 @@ import { useState } from "react";
 import { PillButton } from "../components/ui/PillButton";
 import PhotoCard from "../components/PhotoCard";
 import { PhotoUploadModal } from "../components/PhotoUploadModal";
+import { PhotoDetailModal } from "../components/PhotoDetailModal";
 import { usePhotos } from "../hooks/usePhotos";
 import { useReports } from "../hooks/useReports";
+import type { Photo } from "../types";
 import {
   PageWrapper,
   HeaderRow,
@@ -24,6 +26,9 @@ export default function Timeline() {
   const { isBlocked } = useReports();
   const [activeFilter, setActiveFilter] = useState("all");
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [selected, setSelected] = useState<(Photo & { index: number }) | null>(
+    null,
+  );
 
   const visiblePhotos = photos.filter(
     (p) =>
@@ -57,11 +62,17 @@ export default function Timeline() {
 
       <PhotoGrid>
         {visiblePhotos.map((p, i) => (
-          <PhotoCard key={p.id} photo={p} index={i} />
+          <PhotoCard
+            key={p.id}
+            photo={p}
+            index={i}
+            onClick={() => setSelected({ ...p, index: i })}
+          />
         ))}
       </PhotoGrid>
 
       <PhotoUploadModal open={uploadOpen} onClose={() => setUploadOpen(false)} />
+      <PhotoDetailModal photo={selected} onClose={() => setSelected(null)} />
     </PageWrapper>
   );
 }

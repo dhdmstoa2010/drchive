@@ -1,26 +1,6 @@
 import styled from "@emotion/styled";
-import { css } from "@emotion/react";
 import { colors } from "../../styles/theme";
-
-const fieldStyles = css`
-  width: 100%;
-  padding: 12px 16px;
-  border-radius: 16px;
-  border: 1.5px solid ${colors.glassBorder};
-  background: ${colors.glassBgSoft};
-  font-family: inherit;
-  font-size: 14px;
-  color: ${colors.ink};
-  outline: none;
-  transition:
-    border-color 150ms ease,
-    background-color 150ms ease;
-
-  &:focus {
-    border-color: ${colors.lavender};
-    background: #fff;
-  }
-`;
+import { fieldStyles, selectStyles } from "../../styles/select";
 
 export const Title = styled.div`
   font-size: 18px;
@@ -48,8 +28,7 @@ export const Form = styled.form`
 `;
 
 export const Select = styled.select`
-  ${fieldStyles}
-  cursor: pointer;
+  ${selectStyles}
 `;
 
 export const Textarea = styled.textarea`

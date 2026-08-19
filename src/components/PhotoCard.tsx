@@ -13,11 +13,12 @@ import {
 type PhotoCardProps = {
   photo: Photo;
   index: number;
+  onClick?: () => void;
 };
 
-export default function PhotoCard({ photo, index }: PhotoCardProps) {
+export default function PhotoCard({ photo, index, onClick }: PhotoCardProps) {
   return (
-    <StyledCard>
+    <StyledCard onClick={onClick}>
       <ImageWrap $placeIndex={index}>
         {photo.imageUrl && (
           <PhotoImg src={photo.imageUrl} alt={photo.place} />

@@ -10,6 +10,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
   onSnapshot,
   setDoc,
   updateDoc,
@@ -36,7 +37,7 @@ type AuthContextValue = {
   signup: (input: SignupInput) => Promise<AuthResult>;
   login: (email: string, password: string) => Promise<AuthResult>;
   logout: () => Promise<void>;
-  withdraw: () => Promise<void>;
+  withdraw: () => Promise<AuthResult>;
   updateProfile: (
     patch: Partial<Pick<User, "name" | "grade" | "className">>,
   ) => Promise<void>;
@@ -59,6 +60,8 @@ function authErrorMessage(code: string): string {
       return "이메일 또는 비밀번호가 올바르지 않아요.";
     case "auth/too-many-requests":
       return "시도가 너무 많아요. 잠시 후 다시 시도해주세요.";
+    case "auth/requires-recent-login":
+      return "보안을 위해 재로그인이 필요해요. 로그아웃 후 다시 로그인하고 시도해주세요.";
     default:
       return "문제가 발생했어요. 잠시 후 다시 시도해주세요.";
   }
@@ -146,11 +149,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await signOut(auth);
   }
 
-  async function withdraw() {
+  async function withdraw(): Promise<AuthResult> {
     const firebaseUser = auth.currentUser;
-    if (!firebaseUser) return;
-    await deleteDoc(doc(db, "users", firebaseUser.uid));
-    await deleteUser(firebaseUser);
+    if (!firebaseUser) return { ok: false, error: "로그인이 필요해요." };
+
+    const uid = firebaseUser.uid;
+    // Firestore's delete rule requires an authenticated request, so the
+    // profile doc has to go before the auth account. If deleteUser() then
+    // fails (e.g. session isn't "recent" enough), restore the profile so
+    // the account isn't left orphaned — deleted profile, but email still
+    // registered and impossible to sign up again with.
+    const profileSnap = await getDoc(doc(db, "users", uid));
+    const profileData = profileSnap.data();
+
+    await deleteDoc(doc(db, "users", uid));
+    try {
+      await deleteUser(firebaseUser);
+      return { ok: true };
+    } catch (err) {
+      if (profileData) {
+        try {
+          await setDoc(doc(db, "users", uid), profileData);
+        } catch {
+          // best-effort rollback; surfacing the original error matters more
+        }
+      }
+      return {
+        ok: false,
+        error: authErrorMessage((err as { code?: string }).code ?? ""),
+      };
+    }
   }
 
   async function updateProfile(

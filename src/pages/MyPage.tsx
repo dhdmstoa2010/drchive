@@ -63,6 +63,7 @@ export default function MyPage() {
   const [grade, setGrade] = useState(currentUser?.grade ?? 1);
   const [className, setClassName] = useState(currentUser?.className ?? 1);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
+  const [withdrawError, setWithdrawError] = useState<string | null>(null);
 
   if (!currentUser) return null;
 
@@ -90,7 +91,11 @@ export default function MyPage() {
   }
 
   async function handleWithdraw() {
-    await withdraw();
+    const result = await withdraw();
+    if (!result.ok) {
+      setWithdrawError(result.error);
+      return;
+    }
     navigate("/login");
   }
 
@@ -164,7 +169,13 @@ export default function MyPage() {
           <PillButton type="button" onClick={handleLogout}>
             로그아웃
           </PillButton>
-          <WithdrawButton type="button" onClick={() => setWithdrawOpen(true)}>
+          <WithdrawButton
+            type="button"
+            onClick={() => {
+              setWithdrawError(null);
+              setWithdrawOpen(true);
+            }}
+          >
             회원 탈퇴
           </WithdrawButton>
         </AccountActionsRow>
@@ -271,7 +282,10 @@ export default function MyPage() {
       <ConfirmDialog
         open={withdrawOpen}
         title="정말 회원 탈퇴하시겠어요?"
-        description="계정 정보가 삭제되고 로그아웃돼요. 업로드한 사진/게시물은 남아있을 수 있어요."
+        description={
+          withdrawError ??
+          "계정 정보가 삭제되고 로그아웃돼요. 업로드한 사진/게시물은 남아있을 수 있어요."
+        }
         confirmLabel="탈퇴하기"
         danger
         onConfirm={handleWithdraw}

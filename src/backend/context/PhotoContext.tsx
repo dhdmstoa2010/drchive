@@ -2,6 +2,8 @@ import { createContext, useEffect, useState, type ReactNode } from "react";
 import {
   addDoc,
   collection,
+  deleteDoc,
+  doc,
   onSnapshot,
   orderBy,
   query,
@@ -15,11 +17,13 @@ type UploadInput = {
   place: string;
   semesterLabel: string;
   imageUrl: string;
+  description?: string;
 };
 
 type PhotoContextValue = {
   photos: Photo[];
   uploadPhoto: (input: UploadInput) => Promise<void>;
+  deletePhoto: (id: string) => Promise<void>;
 };
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -47,12 +51,17 @@ export function PhotoProvider({ children }: { children: ReactNode }) {
       uploaderId: currentUser?.id ?? null,
       semesterLabel: input.semesterLabel,
       imageUrl: input.imageUrl,
+      description: input.description?.trim() ?? "",
       createdAt: serverTimestamp(),
     });
   }
 
+  async function deletePhoto(id: string) {
+    await deleteDoc(doc(db, "photos", id));
+  }
+
   return (
-    <PhotoContext.Provider value={{ photos, uploadPhoto }}>
+    <PhotoContext.Provider value={{ photos, uploadPhoto, deletePhoto }}>
       {children}
     </PhotoContext.Provider>
   );

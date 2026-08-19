@@ -11,7 +11,7 @@ import { PageBackground } from "./layout/PageBackground";
 import Timeline from "./pages/Timeline";
 import Capsule from "./pages/Capsule";
 import Chronicle from "./pages/Chronicle";
-import TagBoard from "./pages/TagBoard";
+import TagBoard from "./pages/Tagging";
 import MyPage from "./pages/MyPage";
 import Onboarding from "./pages/Onboarding";
 import Login from "./pages/Login";

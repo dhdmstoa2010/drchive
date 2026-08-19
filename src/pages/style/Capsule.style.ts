@@ -1,8 +1,8 @@
 import styled from "@emotion/styled";
-import { css } from "@emotion/react";
 import { GlassCard } from "../../components/ui/GlassCard";
 import { PillButton } from "../../components/ui/PillButton";
 import { colors } from "../../styles/theme";
+import { fieldStyles, selectStyles } from "../../styles/select";
 
 export const PageWrapper = styled.div`
   display: flex;
@@ -95,42 +95,8 @@ export const CardMeta = styled.div`
   margin-top: 4px;
 `;
 
-/* shared form field styles, applied to different element tags */
-const fieldStyles = css`
-  width: 100%;
-  padding: 12px 16px;
-  border-radius: 16px;
-  border: 1.5px solid rgba(70, 55, 50, 0.16);
-  background: #fff;
-  font-family: inherit;
-  font-size: 14px;
-  color: ${colors.ink};
-  outline: none;
-  box-shadow: 0 1px 2px rgba(20, 20, 30, 0.05);
-  transition:
-    border-color 150ms ease,
-    box-shadow 150ms ease;
-  -webkit-appearance: none;
-  appearance: none;
-
-  &:hover {
-    border-color: ${colors.lavender};
-  }
-
-  &:focus {
-    border-color: ${colors.lavender};
-    box-shadow: 0 0 0 3px ${colors.lavenderBg};
-  }
-`;
-
 export const SelectField = styled.select`
-  ${fieldStyles}
-  cursor: pointer;
-  padding-right: 40px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23847a75' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 7.5L10 12.5L15 7.5'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 14px center;
-  background-size: 15px;
+  ${selectStyles}
 `;
 
 export const MessageTextArea = styled.textarea`

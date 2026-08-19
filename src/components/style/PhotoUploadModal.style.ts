@@ -1,26 +1,7 @@
 import styled from "@emotion/styled";
 import { css } from "@emotion/react";
 import { colors } from "../../styles/theme";
-
-const fieldStyles = css`
-  width: 100%;
-  padding: 12px 16px;
-  border-radius: 16px;
-  border: 1.5px solid ${colors.glassBorder};
-  background: ${colors.glassBgSoft};
-  font-family: inherit;
-  font-size: 14px;
-  color: ${colors.ink};
-  outline: none;
-  transition:
-    border-color 150ms ease,
-    background-color 150ms ease;
-
-  &:focus {
-    border-color: ${colors.lavender};
-    background: #fff;
-  }
-`;
+import { fieldStyles, selectStyles } from "../../styles/select";
 
 export const Title = styled.div`
   font-size: 20px;
@@ -42,12 +23,17 @@ export const Form = styled.form`
 `;
 
 export const Select = styled.select`
-  ${fieldStyles}
-  cursor: pointer;
+  ${selectStyles}
 `;
 
 export const TextInput = styled.input`
   ${fieldStyles}
+`;
+
+export const DescriptionTextArea = styled.textarea`
+  ${fieldStyles}
+  resize: none;
+  min-height: 72px;
 `;
 
 export const HiddenFileInput = styled.input`
@@ -73,8 +59,8 @@ export const UploadZone = styled.label<{ $hasPreview: boolean }>`
   border-radius: 16px;
   overflow: hidden;
   cursor: pointer;
-  border: 1.5px dashed ${colors.glassBorder};
-  background: ${colors.glassBgSoft};
+  border: 1.5px dashed rgba(70, 55, 50, 0.22);
+  background: #fff;
   color: ${colors.inkFaint};
   transition:
     border-color 150ms ease,
@@ -89,7 +75,7 @@ export const UploadZone = styled.label<{ $hasPreview: boolean }>`
     $hasPreview &&
     css`
       border-style: solid;
-      border-color: ${colors.glassBorder};
+      border-color: rgba(70, 55, 50, 0.16);
     `}
 
   &:hover .change-overlay {

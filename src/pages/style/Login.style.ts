@@ -1,7 +1,7 @@
 import styled from "@emotion/styled";
-import { css } from "@emotion/react";
 import { Link } from "react-router-dom";
 import { colors } from "../../styles/theme";
+import { fieldStyles } from "../../styles/select";
 import { PillButton } from "../../components/ui/PillButton";
 import { GlassCard } from "../../components/ui/GlassCard";
 
@@ -26,18 +26,6 @@ export const FormEl = styled.form`
   flex-direction: column;
   gap: 12px;
   margin-top: 24px;
-`;
-
-const fieldStyles = css`
-  width: 100%;
-  padding: 12px 16px;
-  border-radius: 16px;
-  border: 1.5px solid ${colors.glassBorder};
-  background: ${colors.glassBgSoft};
-  font-size: 14px;
-  color: ${colors.ink};
-  outline: none;
-  font-family: inherit;
 `;
 
 export const StyledInput = styled.input`

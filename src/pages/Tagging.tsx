@@ -7,7 +7,7 @@ import { useAuth } from "../hooks/useAuth";
 import { usePhotos } from "../hooks/usePhotos";
 import { useTags } from "../hooks/useTags";
 import { useReports } from "../hooks/useReports";
-import { fileToResizedDataUrl } from "../lib/image";
+import { fileToResizedDataUrl } from "../utils/image";
 import type { TagPost } from "../types";
 import {
   PageWrapper,
@@ -26,7 +26,6 @@ import {
   FieldLabel,
   HiddenFileInput,
   UploadZone,
-  UploadIcon,
   UploadHint,
   PhotoRow,
   PhotoThumbButton,
@@ -53,7 +52,7 @@ import {
   PendingItemActions,
   ApproveButton,
   RejectButton,
-} from "./style/TagBoard.style";
+} from "./style/Tagging.style";
 
 function NewPostModal({
   open,
@@ -99,8 +98,11 @@ function NewPostModal({
           <div>
             <FieldLabel>새 이미지 업로드</FieldLabel>
             <UploadZone $hasPreview={false}>
-              <HiddenFileInput type="file" accept="image/*" onChange={handleFile} />
-              <UploadIcon>📷</UploadIcon>
+              <HiddenFileInput
+                type="file"
+                accept="image/*"
+                onChange={handleFile}
+              />
               <UploadHint>클릭해서 사진 선택</UploadHint>
             </UploadZone>
           </div>
@@ -159,9 +161,7 @@ function PostDetailModal({
   const { suggestionsForPost, suggestTag, reviewSuggestion } = useTags();
   const { blockUser } = useReports();
   const [name, setName] = useState("");
-  const [pending, setPending] = useState<{ x: number; y: number } | null>(
-    null,
-  );
+  const [pending, setPending] = useState<{ x: number; y: number } | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
 
   if (!post) return null;
@@ -181,7 +181,12 @@ function PostDetailModal({
 
   function submitSuggestion() {
     if (!pending || !name.trim()) return;
-    suggestTag({ postId: post!.id, name: name.trim(), x: pending.x, y: pending.y });
+    suggestTag({
+      postId: post!.id,
+      name: name.trim(),
+      x: pending.x,
+      y: pending.y,
+    });
     setPending(null);
     setName("");
   }
@@ -217,7 +222,9 @@ function PostDetailModal({
           </TagMarker>
         ))}
         {pending && (
-          <PendingMarker style={{ left: `${pending.x}%`, top: `${pending.y}%` }}>
+          <PendingMarker
+            style={{ left: `${pending.x}%`, top: `${pending.y}%` }}
+          >
             <PendingDot />
           </PendingMarker>
         )}

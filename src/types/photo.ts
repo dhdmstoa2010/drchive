@@ -6,4 +6,5 @@ export type Photo = {
   uploaderId?: string;
   semesterLabel: string;
   imageUrl?: string;
+  description?: string;
 };

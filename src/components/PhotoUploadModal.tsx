@@ -2,13 +2,14 @@ import { useState, type ChangeEvent, type FormEvent } from "react";
 import { Modal } from "./Modal";
 import { PillButton } from "./ui/PillButton";
 import { usePhotos } from "../hooks/usePhotos";
-import { fileToResizedDataUrl } from "../lib/image";
+import { fileToResizedDataUrl } from "../utils/image";
 import {
   Title,
   Subtitle,
   Form,
   Select,
   TextInput,
+  DescriptionTextArea,
   HiddenFileInput,
   UploadZone,
   UploadHint,
@@ -45,6 +46,7 @@ export function PhotoUploadModal({ open, onClose }: PhotoUploadModalProps) {
   const [place, setPlace] = useState(PLACES[0]);
   const [customPlace, setCustomPlace] = useState("");
   const [semesterLabel, setSemesterLabel] = useState(SEMESTERS[0].id);
+  const [description, setDescription] = useState("");
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,6 +54,7 @@ export function PhotoUploadModal({ open, onClose }: PhotoUploadModalProps) {
     setPlace(PLACES[0]);
     setCustomPlace("");
     setSemesterLabel(SEMESTERS[0].id);
+    setDescription("");
     setPreview(null);
     setError(null);
   }
@@ -82,7 +85,12 @@ export function PhotoUploadModal({ open, onClose }: PhotoUploadModalProps) {
       setError("사진을 선택해주세요.");
       return;
     }
-    await uploadPhoto({ place: finalPlace, semesterLabel, imageUrl: preview });
+    await uploadPhoto({
+      place: finalPlace,
+      semesterLabel,
+      imageUrl: preview,
+      description,
+    });
     handleClose();
   }
 
@@ -117,6 +125,12 @@ export function PhotoUploadModal({ open, onClose }: PhotoUploadModalProps) {
             </option>
           ))}
         </Select>
+        <DescriptionTextArea
+          placeholder="사진에 대한 설명을 남겨보세요 (선택)"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={3}
+        />
         <UploadZone $hasPreview={!!preview}>
           <HiddenFileInput type="file" accept="image/*" onChange={handleFile} />
           {preview ? (

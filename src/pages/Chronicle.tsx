@@ -4,7 +4,7 @@ import { usePhotos } from "../hooks/usePhotos";
 import { useReports } from "../hooks/useReports";
 import type { Photo } from "../types";
 import {
-  EmptyHighlightsCard,
+  EmptyStateCard,
   HeaderRow,
   HighlightCard,
   HighlightGrid,
@@ -21,6 +21,17 @@ import {
   PlaceTagRow,
   SectionTitle,
   SemesterRow,
+  StoryCard,
+  StoryCounter,
+  StoryDescription,
+  StoryFooter,
+  StoryDot,
+  StoryImage,
+  StoryImageWrap,
+  StoryMeta,
+  StoryNavButton,
+  StoryOverlay,
+  StoryPlace,
   SummaryCard,
   SummaryText,
 } from "./style/Chronicle.style";
@@ -71,6 +82,27 @@ export default function Chronicle() {
     [photos, seed],
   );
 
+  const story = useMemo(
+    () => [...photos].sort((a, b) => a.date.localeCompare(b.date)),
+    [photos],
+  );
+  const [storyIndex, setStoryIndex] = useState(0);
+  const [storySemester, setStorySemester] = useState(semester);
+  if (semester !== storySemester) {
+    setStorySemester(semester);
+    setStoryIndex(0);
+  }
+
+  const currentStoryPhoto = story[Math.min(storyIndex, story.length - 1)];
+
+  function goPrev() {
+    setStoryIndex((i) => Math.max(0, i - 1));
+  }
+
+  function goNext() {
+    setStoryIndex((i) => Math.min(story.length - 1, i + 1));
+  }
+
   const semesterLabel =
     SEMESTERS.find((s) => s.id === semester)?.label ?? semester;
   const summary =
@@ -115,6 +147,74 @@ export default function Chronicle() {
       </SummaryCard>
 
       <HighlightsHeader>
+        <SectionTitle>타임라인 스토리</SectionTitle>
+        {story.length > 0 && (
+          <StoryCounter>
+            {storyIndex + 1} / {story.length}
+          </StoryCounter>
+        )}
+      </HighlightsHeader>
+
+      {story.length === 0 ? (
+        <EmptyStateCard interactive={false}>
+          아직 이야기로 엮을 사진이 없어요.
+        </EmptyStateCard>
+      ) : (
+        currentStoryPhoto && (
+          <StoryCard interactive={false}>
+            <StoryImageWrap $placeIndex={storyIndex}>
+              {currentStoryPhoto.imageUrl && (
+                <StoryImage
+                  src={currentStoryPhoto.imageUrl}
+                  alt={currentStoryPhoto.place}
+                />
+              )}
+              <StoryOverlay>
+                <StoryPlace>{currentStoryPhoto.place}</StoryPlace>
+                <StoryMeta>
+                  {currentStoryPhoto.date} · {currentStoryPhoto.uploader}
+                </StoryMeta>
+                {currentStoryPhoto.description && (
+                  <StoryDescription>
+                    {currentStoryPhoto.description}
+                  </StoryDescription>
+                )}
+              </StoryOverlay>
+              <StoryNavButton
+                type="button"
+                $side="left"
+                onClick={goPrev}
+                disabled={storyIndex === 0}
+                aria-label="이전 사진"
+              >
+                ‹
+              </StoryNavButton>
+              <StoryNavButton
+                type="button"
+                $side="right"
+                onClick={goNext}
+                disabled={storyIndex === story.length - 1}
+                aria-label="다음 사진"
+              >
+                ›
+              </StoryNavButton>
+            </StoryImageWrap>
+            <StoryFooter>
+              {story.map((p, i) => (
+                <StoryDot
+                  key={p.id}
+                  type="button"
+                  $active={i === storyIndex}
+                  onClick={() => setStoryIndex(i)}
+                  aria-label={`${i + 1}번째 사진으로 이동`}
+                />
+              ))}
+            </StoryFooter>
+          </StoryCard>
+        )
+      )}
+
+      <HighlightsHeader>
         <SectionTitle>하이라이트</SectionTitle>
         {highlights.length > 0 && (
           <PillButton type="button" onClick={() => setSeed((s) => s + 1)}>
@@ -124,9 +224,9 @@ export default function Chronicle() {
       </HighlightsHeader>
 
       {highlights.length === 0 ? (
-        <EmptyHighlightsCard interactive={false}>
+        <EmptyStateCard interactive={false}>
           하이라이트로 보여줄 사진이 아직 없어요.
-        </EmptyHighlightsCard>
+        </EmptyStateCard>
       ) : (
         <HighlightGrid>
           {highlights.map((p, i) => (

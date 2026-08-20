@@ -4,6 +4,7 @@ import { PillButton } from "./ui/PillButton";
 import { VisibilityPicker } from "./ui/VisibilityPicker";
 import { usePhotos } from "../hooks/usePhotos";
 import { fileToResizedDataUrl } from "../utils/image";
+import { SEMESTERS } from "../constants/semester";
 import type { Visibility } from "../types";
 import {
   Title,
@@ -25,11 +26,6 @@ import {
 } from "./style/PhotoUploadModal.style";
 
 const CUSTOM_PLACE = "직접 입력";
-
-const SEMESTERS = [
-  { id: "2026-1", label: "2026년 1학기" },
-  { id: "2025-2", label: "2025년 2학기" },
-];
 
 type PhotoUploadModalProps = {
   open: boolean;

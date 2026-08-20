@@ -10,6 +10,7 @@ import { usePhotos } from "../hooks/usePhotos";
 import { useReports } from "../hooks/useReports";
 import { isVisibleToViewer } from "../utils/visibility";
 import { GRADE_FILTERS } from "../constants/grade";
+import { SEMESTERS } from "../constants/semester";
 import type { Photo } from "../types";
 import {
   PageWrapper,
@@ -23,8 +24,7 @@ import {
 
 const FILTERS: { id: string; label: string }[] = [
   { id: "all", label: "전체" },
-  { id: "2026-1", label: "2026년 1학기" },
-  { id: "2026-2", label: "2026년 2학기" },
+  ...SEMESTERS,
 ];
 
 export default function Memory() {

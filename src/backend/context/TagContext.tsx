@@ -2,6 +2,7 @@ import { createContext, useEffect, useState, type ReactNode } from "react";
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   onSnapshot,
   updateDoc,
@@ -19,6 +20,7 @@ import type {
 import { useAuth } from "../../hooks/useAuth";
 import { useNotifications } from "../../hooks/useNotifications";
 import { usePhotos } from "../../hooks/usePhotos";
+import { SEMESTERS } from "../../constants/semester";
 
 type CreatePostInput = {
   imageUrl: string;
@@ -31,8 +33,10 @@ type CreatePostInput = {
 
 type PublishDecision = "blurred" | "original" | "rejected";
 
-// "나예요" self-claim submission — the submitter is always claiming the spot
-// they clicked is themselves, so taggedUserId always equals the submitter.
+// A tag suggestion is either a "나예요" self-claim (taggedUserId ===
+// submitter, filled in automatically) or a "제보" — a third party who isn't
+// the post owner recognizing someone else's blurred face and pointing them
+// out (taggedUserId is whichever member they picked).
 type SuggestInput = {
   postId: string;
   name: string;
@@ -109,9 +113,21 @@ type TagContextValue = {
   posts: TagPost[];
   suggestions: TagSuggestion[];
   publishRequests: PublishRequest[];
+  isAdmin: boolean;
   createPost: (input: CreatePostInput) => Promise<void>;
   suggestTag: (input: SuggestInput) => Promise<void>;
-  reviewSuggestion: (id: string, decision: "approved" | "rejected") => Promise<void>;
+  reviewSuggestionByAdmin: (
+    id: string,
+    decision: "approved" | "rejected",
+  ) => Promise<void>;
+  reviewSuggestionByOwner: (
+    id: string,
+    decision: "approved" | "rejected",
+  ) => Promise<void>;
+  submitClaimPreferences: (
+    id: string,
+    prefs: { wantsMosaicRemoved: boolean; wantsPublish: boolean },
+  ) => Promise<void>;
   suggestionsForPost: (postId: string) => TagSuggestion[];
   requestPublish: (postId: string) => Promise<void>;
   reviewPublishRequest: (id: string, decision: PublishDecision) => Promise<void>;
@@ -122,9 +138,11 @@ type TagContextValue = {
 export const TagContext = createContext<TagContextValue | null>(null);
 
 export function TagProvider({ children }: { children: ReactNode }) {
-  const { currentUser } = useAuth();
+  const { currentUser, users } = useAuth();
   const { notify } = useNotifications();
   const { uploadPhoto } = usePhotos();
+  const isAdmin = currentUser?.username === "admin";
+  const adminUser = users.find((u) => u.username === "admin");
   const [posts, setPosts] = useState<TagPost[]>([]);
   const [suggestions, setSuggestions] = useState<TagSuggestion[]>([]);
   const [publishRequests, setPublishRequests] = useState<PublishRequest[]>([]);
@@ -176,7 +194,8 @@ export function TagProvider({ children }: { children: ReactNode }) {
 
   async function suggestTag(input: SuggestInput) {
     if (!currentUser) return;
-    const post = posts.find((p) => p.id === input.postId);
+    const isSelfClaim = input.taggedUserId === currentUser.id;
+
     await addDoc(collection(db, "tagSuggestions"), {
       postId: input.postId,
       submitterId: currentUser.id,
@@ -189,32 +208,134 @@ export function TagProvider({ children }: { children: ReactNode }) {
       status: "pending" as SuggestionStatus,
       createdAt: new Date().toISOString(),
     });
-    if (post && post.ownerId !== currentUser.id) {
+
+    if (adminUser) {
       await notify({
-        userId: post.ownerId,
+        userId: adminUser.id,
         type: "tag_suggested",
-        title: "본인 확인 요청이 있어요",
-        message: `${input.name}님이 회원님의 게시물에서 본인이라며 확인을 요청했어요.`,
+        title: isSelfClaim ? "본인 확인 요청이 있어요" : "새로운 태그 제보가 있어요",
+        message: isSelfClaim
+          ? `${input.name}님이 본인이라며 신원 확인을 요청했어요.`
+          : `누군가 "${input.name}" 님을 태그했어요. 신원 확인이 필요해요.`,
         linkTo: "/tag",
       });
     }
+
     await notify({
-      userId: input.taggedUserId,
+      userId: currentUser.id,
       type: "tag_claim_submitted",
-      title: "본인 확인 요청을 보냈어요",
-      message: "게시물 주인이 확인하면 결과를 알려드릴게요.",
+      title: isSelfClaim ? "본인 확인 요청을 보냈어요" : "제보를 보냈어요",
+      message: "관리자가 신원을 확인하면 결과를 알려드릴게요.",
       linkTo: "/tag",
     });
   }
 
-  async function reviewSuggestion(id: string, decision: "approved" | "rejected") {
+  // Stage 1: an admin checks the claimed identity against the original
+  // photo. Rejecting here ends the request; approving hands it back to the
+  // submitter to state their own mosaic/publish preferences.
+  async function reviewSuggestionByAdmin(
+    id: string,
+    decision: "approved" | "rejected",
+  ) {
     const suggestion = suggestions.find((s) => s.id === id);
-    if (!suggestion) return;
+    const post = suggestion && posts.find((p) => p.id === suggestion.postId);
+    if (!suggestion || !post) return;
+    const isSelfClaim = suggestion.taggedUserId === suggestion.submitterId;
+
+    const status: SuggestionStatus =
+      decision === "approved" ? "admin_approved" : "admin_rejected";
+    await updateDoc(doc(db, "tagSuggestions", id), { status });
+
+    await notify({
+      userId: suggestion.submitterId,
+      type: "tag_admin_reviewed",
+      title:
+        decision === "approved" ? "관리자가 신원을 확인했어요" : "관리자가 요청을 거절했어요",
+      message:
+        decision === "approved"
+          ? isSelfClaim
+            ? "모자이크 해제와 Memory 게시 여부를 직접 정해주세요."
+            : "이제 게시물 주인이 공개 여부를 결정해요."
+          : "제출하신 요청이 신원 확인 단계에서 거절됐어요.",
+      linkTo: "/tag",
+    });
+
+    // "제보" (tagging someone else) skips the submitter-preference step, so
+    // the owner needs to be notified here instead of after that step.
+    if (decision === "approved" && !isSelfClaim && post.ownerId !== suggestion.submitterId) {
+      await notify({
+        userId: post.ownerId,
+        type: "tag_owner_review_needed",
+        title: "공개 여부를 결정해주세요",
+        message: `관리자가 신원을 확인한 태그 제보가 있어요. "${suggestion.name}" 태그를 반영해도 될까요?`,
+        linkTo: "/tag",
+      });
+    }
+  }
+
+  // Stage 2: only reachable once admin-approved. The submitter — the actual
+  // subject of the claim — states whether they consent to the mosaic coming
+  // off and/or the post being eligible for Memory. Only after this does the
+  // post owner get to see and act on the request.
+  async function submitClaimPreferences(
+    id: string,
+    prefs: { wantsMosaicRemoved: boolean; wantsPublish: boolean },
+  ) {
+    const suggestion = suggestions.find((s) => s.id === id);
+    const post = suggestion && posts.find((p) => p.id === suggestion.postId);
+    if (!suggestion || !post) return;
+    if (
+      suggestion.status !== "admin_approved" ||
+      suggestion.submitterId !== currentUser?.id
+    ) {
+      return;
+    }
+
+    await updateDoc(doc(db, "tagSuggestions", id), {
+      wantsMosaicRemoved: prefs.wantsMosaicRemoved,
+      wantsPublish: prefs.wantsPublish,
+    });
+
+    if (post.ownerId !== suggestion.submitterId) {
+      await notify({
+        userId: post.ownerId,
+        type: "tag_owner_review_needed",
+        title: "공개 여부를 결정해주세요",
+        message: `관리자 확인과 본인 동의를 마친 요청이 있어요. "${suggestion.name}" 태그를 공개해도 될까요?`,
+        linkTo: "/tag",
+      });
+    }
+  }
+
+  // Stage 3: only reachable once admin-approved AND the submitter has set
+  // their own preferences. The post owner makes the final call — for a
+  // self-claim, approving reveals that one blurred region, but only if the
+  // submitter opted into the mosaic coming off.
+  async function reviewSuggestionByOwner(
+    id: string,
+    decision: "approved" | "rejected",
+  ) {
+    const suggestion = suggestions.find((s) => s.id === id);
+    if (!suggestion || suggestion.status !== "admin_approved") return;
+    const isSelfClaim = suggestion.taggedUserId === suggestion.submitterId;
+    // "나예요" self-claims must wait for the submitter's own mosaic/publish
+    // preferences first; "제보" (tagging someone else) skips straight here
+    // since the submitter isn't the one whose consent matters.
+    if (isSelfClaim && suggestion.wantsMosaicRemoved === undefined) return;
     const post = posts.find((p) => p.id === suggestion.postId);
 
-    await updateDoc(doc(db, "tagSuggestions", id), { status: decision });
+    const status: SuggestionStatus =
+      decision === "approved" ? "owner_approved" : "owner_rejected";
+    await updateDoc(doc(db, "tagSuggestions", id), { status });
 
-    if (decision === "approved" && post?.originalImageUrl) {
+    // Only reveal the mosaic for self-claims the submitter opted into — a
+    // third party recognizing someone else isn't that person's own consent.
+    if (
+      decision === "approved" &&
+      isSelfClaim &&
+      suggestion.wantsMosaicRemoved &&
+      post?.originalImageUrl
+    ) {
       const rect = findRectForPoint(post.blurRects, suggestion.x, suggestion.y);
       if (rect) {
         try {
@@ -235,13 +356,38 @@ export function TagProvider({ children }: { children: ReactNode }) {
     await notify({
       userId: suggestion.submitterId,
       type: decision === "approved" ? "tag_approved" : "tag_rejected",
-      title: decision === "approved" ? "본인 확인이 승인됐어요" : "본인 확인이 거절됐어요",
+      title:
+        decision === "approved"
+          ? isSelfClaim
+            ? "본인 확인이 최종 승인됐어요"
+            : "제보가 최종 승인됐어요"
+          : isSelfClaim
+            ? "본인 확인이 거절됐어요"
+            : "제보가 거절됐어요",
       message:
         decision === "approved"
-          ? "요청하신 부분의 모자이크가 해제됐어요."
-          : "본인 확인 요청이 거절됐어요.",
+          ? isSelfClaim
+            ? suggestion.wantsMosaicRemoved
+              ? suggestion.wantsPublish
+                ? "요청하신 부분의 모자이크가 해제됐어요. 이제 Memory 게시를 요청할 수 있어요."
+                : "요청하신 부분의 모자이크가 해제됐어요."
+              : "본인 확인이 최종 승인됐어요."
+            : `제보하신 "${suggestion.name}" 태그가 게시물에 반영됐어요.`
+          : isSelfClaim
+            ? "게시물 주인이 공개를 거절했어요."
+            : "게시물 주인이 거절했어요.",
       linkTo: "/tag",
     });
+
+    if (decision === "approved" && !isSelfClaim && suggestion.taggedUserId) {
+      await notify({
+        userId: suggestion.taggedUserId,
+        type: "tagged_by_other",
+        title: "사진에 태그됐어요",
+        message: "누군가 익명 태깅 게시물에서 회원님을 지목했고, 최종 승인됐어요.",
+        linkTo: "/tag",
+      });
+    }
   }
 
   function suggestionsForPost(postId: string) {
@@ -251,7 +397,23 @@ export function TagProvider({ children }: { children: ReactNode }) {
   async function requestPublish(postId: string) {
     if (!currentUser) return;
     const post = posts.find((p) => p.id === postId);
-    if (!post || post.publishedPhotoId) return;
+    if (!post) return;
+
+    // Only someone whose own "나예요" self-claim on this post made it all
+    // the way through admin + owner approval, and who opted into Memory
+    // publishing themselves, can ask to publish it.
+    const verified = suggestions.some(
+      (s) =>
+        s.postId === postId &&
+        s.submitterId === currentUser.id &&
+        s.taggedUserId === currentUser.id &&
+        s.status === "owner_approved" &&
+        s.wantsPublish,
+    );
+    if (!verified) {
+      throw new Error("본인 확인이 최종 승인된 사람만 Memory 게시를 요청할 수 있어요.");
+    }
+
     await addDoc(collection(db, "publishRequests"), {
       postId,
       requesterId: currentUser.id,
@@ -278,20 +440,19 @@ export function TagProvider({ children }: { children: ReactNode }) {
       status: decision === "rejected" ? "rejected" : "approved",
     });
 
-    if (decision !== "rejected" && !post.publishedPhotoId) {
+    if (decision !== "rejected") {
       const imageUrl =
         decision === "original"
           ? (post.originalImageUrl ?? post.imageUrl)
           : post.imageUrl;
-      const photoId = await uploadPhoto({
+      await uploadPhoto({
         place: post.place ?? "익명 장소",
-        semesterLabel: "2026-2",
+        semesterLabel: SEMESTERS[SEMESTERS.length - 1].id,
         imageUrl,
         visibility: post.visibility ?? "grade",
       });
-      await updateDoc(doc(db, "tagPosts", post.id), {
-        publishedPhotoId: photoId,
-      });
+      // Now that it lives on Memory, drop it from Tagging entirely.
+      await deleteDoc(doc(db, "tagPosts", post.id));
     }
 
     await notify({
@@ -316,9 +477,12 @@ export function TagProvider({ children }: { children: ReactNode }) {
         posts,
         suggestions,
         publishRequests,
+        isAdmin,
         createPost,
         suggestTag,
-        reviewSuggestion,
+        reviewSuggestionByAdmin,
+        reviewSuggestionByOwner,
+        submitClaimPreferences,
         suggestionsForPost,
         requestPublish,
         reviewPublishRequest,

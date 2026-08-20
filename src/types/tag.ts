@@ -15,15 +15,26 @@ export type TagPost = {
   blurRects?: BlurRect[];
   createdAt: string;
   visibility?: Visibility;
-  publishedPhotoId?: string;
 };
 
-export type SuggestionStatus = "pending" | "approved" | "rejected";
+// Three-stage review:
+// 1. An admin verifies the claimed identity is correct (against the
+//    original photo).
+// 2. Only once admin-approved, the submitter themselves states whether
+//    they're okay with the mosaic coming off and/or the post going to
+//    Memory (wantsMosaicRemoved / wantsPublish).
+// 3. Only once the submitter has stated those preferences, the post owner
+//    sees the request and makes the final call.
+export type SuggestionStatus =
+  | "pending"
+  | "admin_approved"
+  | "admin_rejected"
+  | "owner_approved"
+  | "owner_rejected";
 
-// A "나예요" self-identification request: the submitter claims a blurred
-// spot in the photo is themselves (submitterId === taggedUserId). The post
-// owner reviews it against the original photo and, on approval, that one
-// blurred region is revealed for everyone.
+// A "나예요" self-identification request (submitterId === taggedUserId) or a
+// "제보" — someone recognizing a different member's blurred face
+// (taggedUserId is whoever they picked).
 export type TagSuggestion = {
   id: string;
   postId: string;
@@ -35,6 +46,9 @@ export type TagSuggestion = {
   x: number;
   y: number;
   status: SuggestionStatus;
+  // Set by the submitter after admin approval, before the owner can act.
+  wantsMosaicRemoved?: boolean;
+  wantsPublish?: boolean;
   createdAt: string;
 };
 

@@ -90,6 +90,18 @@ export const DeleteButton = styled.button`
   cursor: pointer;
 `;
 
+export const EditButton = styled.button`
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: ${colors.lavenderDeep};
+  background: none;
+  border: none;
+  padding: 0;
+  margin-right: 16px;
+  cursor: pointer;
+`;
+
 export const ActionRow = styled.div`
   display: flex;
   gap: 12px;

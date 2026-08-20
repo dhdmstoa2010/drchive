@@ -15,6 +15,11 @@ service cloud.firestore {
         get(/databases/$(database)/documents/tagPosts/$(postId)).data.ownerId == request.auth.uid;
     }
 
+    function isAdmin() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == 'admin';
+    }
+
     // Member profiles (AuthContext) — everyone signed in can see the roster,
     // but only the account owner can create/update/delete their own doc.
     match /users/{userId} {
@@ -27,22 +32,29 @@ service cloud.firestore {
     match /photos/{photoId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.uploaderId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.uploaderId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.uploaderId == request.auth.uid;
     }
 
     // Anonymous Tagging posts (TagContext) — owner-only write access.
+    // Deleted once published to Memory (see publishRequests below).
     match /tagPosts/{postId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
     }
 
-    // Tag suggestions ("제보") — anyone can submit, only the post owner can
-    // approve/reject.
+    // Tag suggestions ("나예요" / "제보") — anyone can submit. Three-stage
+    // review: an admin verifies identity, then (for self-claims) the
+    // submitter states their own mosaic/publish preferences, then the post
+    // owner decides whether to make it public.
     match /tagSuggestions/{suggestionId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.submitterId == request.auth.uid;
-      allow update: if ownerOfPost(resource.data.postId);
+      allow update: if isAdmin() ||
+        ownerOfPost(resource.data.postId) ||
+        (isSignedIn() &&
+          resource.data.submitterId == request.auth.uid &&
+          resource.data.status == 'admin_approved');
     }
 
     // "Memory에 올려도 될까요?" publish requests — anyone can ask, only the

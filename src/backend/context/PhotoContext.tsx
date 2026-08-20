@@ -8,6 +8,7 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  updateDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import type { Photo, Visibility } from "../../types";
@@ -21,10 +22,18 @@ type UploadInput = {
   visibility: Visibility;
 };
 
+type UpdateInput = {
+  place: string;
+  semesterLabel: string;
+  description?: string;
+  visibility: Visibility;
+};
+
 type PhotoContextValue = {
   photos: Photo[];
   photosLoading: boolean;
   uploadPhoto: (input: UploadInput) => Promise<string>;
+  updatePhoto: (id: string, input: UpdateInput) => Promise<void>;
   deletePhoto: (id: string) => Promise<void>;
 };
 
@@ -62,13 +71,22 @@ export function PhotoProvider({ children }: { children: ReactNode }) {
     return ref.id;
   }
 
+  async function updatePhoto(id: string, input: UpdateInput) {
+    await updateDoc(doc(db, "photos", id), {
+      place: input.place,
+      semesterLabel: input.semesterLabel,
+      description: input.description?.trim() ?? "",
+      visibility: input.visibility,
+    });
+  }
+
   async function deletePhoto(id: string) {
     await deleteDoc(doc(db, "photos", id));
   }
 
   return (
     <PhotoContext.Provider
-      value={{ photos, photosLoading, uploadPhoto, deletePhoto }}
+      value={{ photos, photosLoading, uploadPhoto, updatePhoto, deletePhoto }}
     >
       {children}
     </PhotoContext.Provider>

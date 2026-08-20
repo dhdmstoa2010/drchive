@@ -4,6 +4,7 @@ import { Modal } from "../components/Modal";
 import { BlurCanvas } from "../components/BlurCanvas";
 import { ReportModal } from "../components/ReportModal";
 import { VisibilityPicker } from "../components/ui/VisibilityPicker";
+import { Dropdown } from "../components/ui/Dropdown";
 import { useAuth } from "../hooks/useAuth";
 import { usePhotos } from "../hooks/usePhotos";
 import { useTags } from "../hooks/useTags";
@@ -180,27 +181,46 @@ function PostDetailModal({
   const {
     suggestionsForPost,
     suggestTag,
-    reviewSuggestion,
+    reviewSuggestionByAdmin,
+    reviewSuggestionByOwner,
+    submitClaimPreferences,
     publishRequestsForPost,
     requestPublish,
     reviewPublishRequest,
+    isAdmin,
   } = useTags();
   const { blockUser } = useReports();
-  const [claiming, setClaiming] = useState(false);
+  const [claimMode, setClaimMode] = useState<"self" | "report" | null>(null);
   const [claimedDate, setClaimedDate] = useState("");
   const [claimInfo, setClaimInfo] = useState("");
+  const [reportedUserId, setReportedUserId] = useState("");
   const [pending, setPending] = useState({ x: 50, y: 50 });
   const [reportOpen, setReportOpen] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
   const [claimError, setClaimError] = useState<string | null>(null);
+  const [prefMosaic, setPrefMosaic] = useState(true);
+  const [prefPublish, setPrefPublish] = useState(true);
 
   if (!post) return null;
   const isOwner = currentUser?.id === post.ownerId;
   const owner = users.find((u) => u.id === post.ownerId);
+  const memberOptions = [
+    { value: "", label: "지목할 멤버 선택" },
+    ...users
+      .filter((u) => u.id !== currentUser?.id)
+      .map((u) => ({
+        value: u.id,
+        label: `${u.name} (${u.grade}학년 ${u.className}반)`,
+      })),
+  ];
   const suggestions = suggestionsForPost(post.id);
-  const approved = suggestions.filter((s) => s.status === "approved");
-  const pendingList = suggestions.filter((s) => s.status === "pending");
-  const published = !!post.publishedPhotoId;
+  const approved = suggestions.filter((s) => s.status === "owner_approved");
+  const pendingAdminList = suggestions.filter((s) => s.status === "pending");
+  const pendingOwnerList = suggestions.filter((s) => {
+    if (s.status !== "admin_approved") return false;
+    const isSelfClaim = s.taggedUserId === s.submitterId;
+    return !isSelfClaim || s.wantsMosaicRemoved !== undefined;
+  });
   const publishRequests = publishRequestsForPost(post.id);
   const myPublishRequest = publishRequests.find(
     (r) => r.requesterId === currentUser?.id,
@@ -208,14 +228,36 @@ function PostDetailModal({
   const pendingPublishRequests = publishRequests.filter(
     (r) => r.status === "pending",
   );
+  const myVerifiedClaim = suggestions.some(
+    (s) =>
+      s.submitterId === currentUser?.id &&
+      s.taggedUserId === currentUser?.id &&
+      s.status === "owner_approved" &&
+      s.wantsPublish,
+  );
+  const myPendingPreference = suggestions.find(
+    (s) =>
+      s.submitterId === currentUser?.id &&
+      s.taggedUserId === currentUser?.id &&
+      s.status === "admin_approved" &&
+      s.wantsMosaicRemoved === undefined,
+  );
 
   function handleImageClick(e: MouseEvent<HTMLDivElement>) {
-    if (isOwner || !claiming) return;
+    if (isOwner || !claimMode) return;
     const bounds = e.currentTarget.getBoundingClientRect();
     setPending({
       x: ((e.clientX - bounds.left) / bounds.width) * 100,
       y: ((e.clientY - bounds.top) / bounds.height) * 100,
     });
+  }
+
+  function resetClaimForm() {
+    setClaimMode(null);
+    setPending({ x: 50, y: 50 });
+    setClaimedDate("");
+    setClaimInfo("");
+    setReportedUserId("");
   }
 
   async function submitClaim() {
@@ -231,13 +273,44 @@ function PostDetailModal({
         x: pending.x,
         y: pending.y,
       });
-      setClaiming(false);
-      setPending({ x: 50, y: 50 });
-      setClaimedDate("");
-      setClaimInfo("");
+      resetClaimForm();
     } catch (err) {
       console.error("본인 확인 요청 실패:", err);
       setClaimError("요청을 보내지 못했어요. 잠시 후 다시 시도해주세요.");
+    }
+  }
+
+  async function handleSubmitPreferences() {
+    if (!myPendingPreference) return;
+    setClaimError(null);
+    try {
+      await submitClaimPreferences(myPendingPreference.id, {
+        wantsMosaicRemoved: prefMosaic,
+        wantsPublish: prefPublish,
+      });
+    } catch (err) {
+      console.error("동의 여부 제출 실패:", err);
+      setClaimError("제출하지 못했어요. 잠시 후 다시 시도해주세요.");
+    }
+  }
+
+  async function submitReport() {
+    if (!reportedUserId) return;
+    const reported = users.find((u) => u.id === reportedUserId);
+    if (!reported) return;
+    setClaimError(null);
+    try {
+      await suggestTag({
+        postId: post!.id,
+        name: reported.name,
+        taggedUserId: reported.id,
+        x: pending.x,
+        y: pending.y,
+      });
+      resetClaimForm();
+    } catch (err) {
+      console.error("제보 실패:", err);
+      setClaimError("제보를 보내지 못했어요. 잠시 후 다시 시도해주세요.");
     }
   }
 
@@ -247,7 +320,11 @@ function PostDetailModal({
       await requestPublish(post!.id);
     } catch (err) {
       console.error("Memory 게시 요청 실패:", err);
-      setPublishError("요청을 보내지 못했어요. 잠시 후 다시 시도해주세요.");
+      setPublishError(
+        err instanceof Error
+          ? err.message
+          : "요청을 보내지 못했어요. 잠시 후 다시 시도해주세요.",
+      );
     }
   }
 
@@ -264,15 +341,28 @@ function PostDetailModal({
     }
   }
 
-  async function handleClaimDecision(
+  async function handleAdminDecision(
     suggestionId: string,
     decision: "approved" | "rejected",
   ) {
     setClaimError(null);
     try {
-      await reviewSuggestion(suggestionId, decision);
+      await reviewSuggestionByAdmin(suggestionId, decision);
     } catch (err) {
-      console.error("본인 확인 요청 처리 실패:", err);
+      console.error("신원 확인 처리 실패:", err);
+      setClaimError("처리하지 못했어요. 잠시 후 다시 시도해주세요.");
+    }
+  }
+
+  async function handleOwnerDecision(
+    suggestionId: string,
+    decision: "approved" | "rejected",
+  ) {
+    setClaimError(null);
+    try {
+      await reviewSuggestionByOwner(suggestionId, decision);
+    } catch (err) {
+      console.error("공개 여부 처리 실패:", err);
       setClaimError("처리하지 못했어요. 잠시 후 다시 시도해주세요.");
     }
   }
@@ -286,7 +376,7 @@ function PostDetailModal({
           <MetaText>
             {isOwner
               ? "내 게시물"
-              : "본인이 나온 사진이라면 '나예요' 버튼으로 확인을 요청해보세요"}
+              : "본인이 나왔다면 '나예요', 다른 사람이 나온 것 같다면 '제보'를 눌러보세요"}
           </MetaText>
         </div>
         {!isOwner && (
@@ -308,7 +398,7 @@ function PostDetailModal({
             <TagLabel>{s.name}</TagLabel>
           </TagMarker>
         ))}
-        {!isOwner && claiming && (
+        {!isOwner && claimMode && (
           <PendingMarker
             style={{ left: `${pending.x}%`, top: `${pending.y}%` }}
           >
@@ -317,15 +407,68 @@ function PostDetailModal({
         )}
       </ImageFrame>
 
-      {!isOwner && !claiming && (
+      {!isOwner && myPendingPreference && (
+        <FormSection>
+          <MetaText>
+            관리자가 신원을 확인했어요! 아래 두 가지를 직접 정해주세요.
+          </MetaText>
+          <div>
+            <FieldLabel>모자이크를 해제할까요?</FieldLabel>
+            <SuggestRow>
+              <PillButton
+                type="button"
+                active={prefMosaic}
+                onClick={() => setPrefMosaic(true)}
+              >
+                해제할래요
+              </PillButton>
+              <PillButton
+                type="button"
+                active={!prefMosaic}
+                onClick={() => setPrefMosaic(false)}
+              >
+                그대로 둘래요
+              </PillButton>
+            </SuggestRow>
+          </div>
+          <div>
+            <FieldLabel>Memory에 게시되는 것도 괜찮을까요?</FieldLabel>
+            <SuggestRow>
+              <PillButton
+                type="button"
+                active={prefPublish}
+                onClick={() => setPrefPublish(true)}
+              >
+                괜찮아요
+              </PillButton>
+              <PillButton
+                type="button"
+                active={!prefPublish}
+                onClick={() => setPrefPublish(false)}
+              >
+                안 돼요
+              </PillButton>
+            </SuggestRow>
+          </div>
+          {claimError && <ErrorText>{claimError}</ErrorText>}
+          <PillButton type="button" active onClick={handleSubmitPreferences}>
+            제출하기
+          </PillButton>
+        </FormSection>
+      )}
+
+      {!isOwner && !claimMode && !myPendingPreference && (
         <SuggestRow>
-          <PillButton type="button" active onClick={() => setClaiming(true)}>
+          <PillButton type="button" active onClick={() => setClaimMode("self")}>
             나예요
+          </PillButton>
+          <PillButton type="button" onClick={() => setClaimMode("report")}>
+            제보
           </PillButton>
         </SuggestRow>
       )}
 
-      {!isOwner && claiming && (
+      {!isOwner && claimMode === "self" && !myPendingPreference && (
         <FormSection>
           <MetaText>
             표시가 본인이 아닌 곳에 있다면, 사진에서 본인 위치를 클릭해
@@ -362,7 +505,38 @@ function PostDetailModal({
             >
               확인 요청 보내기
             </PillButton>
-            <PillButton type="button" onClick={() => setClaiming(false)}>
+            <PillButton type="button" onClick={resetClaimForm}>
+              취소
+            </PillButton>
+          </SuggestRow>
+        </FormSection>
+      )}
+
+      {!isOwner && claimMode === "report" && !myPendingPreference && (
+        <FormSection>
+          <MetaText>
+            표시가 지목하려는 사람이 아니라면, 사진에서 그 위치를 클릭해
+            옮겨주세요.
+          </MetaText>
+          <div>
+            <FieldLabel>이 사람은 누구인가요?</FieldLabel>
+            <Dropdown
+              value={reportedUserId}
+              onChange={setReportedUserId}
+              options={memberOptions}
+            />
+          </div>
+          {claimError && <ErrorText>{claimError}</ErrorText>}
+          <SuggestRow>
+            <PillButton
+              type="button"
+              active
+              disabled={!reportedUserId}
+              onClick={submitReport}
+            >
+              제보하기
+            </PillButton>
+            <PillButton type="button" onClick={resetClaimForm}>
               취소
             </PillButton>
           </SuggestRow>
@@ -371,56 +545,116 @@ function PostDetailModal({
 
       {!isOwner && (
         <SuggestRow>
-          {published ? (
-            <EmptyNote>이 게시물은 이미 Memory에 게시됐어요.</EmptyNote>
-          ) : myPublishRequest?.status === "pending" ? (
+          {myPublishRequest?.status === "pending" ? (
             <EmptyNote>
               Memory 게시를 요청했어요. 게시물 주인의 승인을 기다리는 중이에요.
             </EmptyNote>
-          ) : (
+          ) : myVerifiedClaim ? (
             <PillButton type="button" onClick={handleRequestPublish}>
               Memory에 올려도 될까요?
             </PillButton>
+          ) : (
+            <EmptyNote>
+              "나예요" 요청이 관리자·게시물 주인에게 모두 승인되면 Memory 게시를
+              요청할 수 있어요.
+            </EmptyNote>
           )}
         </SuggestRow>
       )}
       {!isOwner && publishError && <ErrorText>{publishError}</ErrorText>}
 
-      {isOwner && (
+      {isAdmin && (
         <PendingSection>
-          <SectionLabel>본인 확인 요청 ({pendingList.length})</SectionLabel>
-          {post.originalImageUrl && pendingList.length > 0 && (
+          <SectionLabel>
+            [관리자] 신원 확인 대기 ({pendingAdminList.length})
+          </SectionLabel>
+          {post.originalImageUrl && pendingAdminList.length > 0 && (
             <OriginalPreview src={post.originalImageUrl} alt="원본 사진" />
           )}
-          {pendingList.length === 0 ? (
+          {pendingAdminList.length === 0 ? (
             <EmptyNote>대기 중인 요청이 없어요.</EmptyNote>
           ) : (
             <PendingList>
-              {pendingList.map((s) => (
-                <PendingItem key={s.id}>
-                  <PendingItemText>
-                    {s.name}님이 본인이라며 확인을 요청했어요
-                    {s.claimedDate && (
-                      <MetaText>촬영 날짜: {s.claimedDate}</MetaText>
-                    )}
-                    {s.extraInfo && <MetaText>{s.extraInfo}</MetaText>}
-                  </PendingItemText>
-                  <PendingItemActions>
-                    <ApproveButton
-                      type="button"
-                      onClick={() => handleClaimDecision(s.id, "approved")}
-                    >
-                      승인
-                    </ApproveButton>
-                    <RejectButton
-                      type="button"
-                      onClick={() => handleClaimDecision(s.id, "rejected")}
-                    >
-                      거절
-                    </RejectButton>
-                  </PendingItemActions>
-                </PendingItem>
-              ))}
+              {pendingAdminList.map((s) => {
+                const isSelfClaim = s.taggedUserId === s.submitterId;
+                return (
+                  <PendingItem key={s.id}>
+                    <PendingItemText>
+                      {isSelfClaim
+                        ? `${s.name}님이 본인이라며 확인을 요청했어요`
+                        : `누군가 이 사진 속 인물이 "${s.name}"님이라고 제보했어요`}
+                      {isSelfClaim && s.claimedDate && (
+                        <MetaText>촬영 날짜: {s.claimedDate}</MetaText>
+                      )}
+                      {isSelfClaim && s.extraInfo && (
+                        <MetaText>{s.extraInfo}</MetaText>
+                      )}
+                    </PendingItemText>
+                    <PendingItemActions>
+                      <ApproveButton
+                        type="button"
+                        onClick={() => handleAdminDecision(s.id, "approved")}
+                      >
+                        신원 확인됨
+                      </ApproveButton>
+                      <RejectButton
+                        type="button"
+                        onClick={() => handleAdminDecision(s.id, "rejected")}
+                      >
+                        거절
+                      </RejectButton>
+                    </PendingItemActions>
+                  </PendingItem>
+                );
+              })}
+            </PendingList>
+          )}
+          {claimError && <ErrorText>{claimError}</ErrorText>}
+        </PendingSection>
+      )}
+
+      {isOwner && (
+        <PendingSection>
+          <SectionLabel>
+            공개 여부 결정 ({pendingOwnerList.length})
+          </SectionLabel>
+          {pendingOwnerList.length === 0 ? (
+            <EmptyNote>관리자 확인을 거쳐 대기 중인 요청이 없어요.</EmptyNote>
+          ) : (
+            <PendingList>
+              {pendingOwnerList.map((s) => {
+                const isSelfClaim = s.taggedUserId === s.submitterId;
+                return (
+                  <PendingItem key={s.id}>
+                    <PendingItemText>
+                      {isSelfClaim
+                        ? `${s.name}님의 본인 확인이 완료됐어요. 공개해도 될까요?`
+                        : `"${s.name}"님 태그가 관리자 확인을 거쳤어요. 반영해도 될까요?`}
+                      {isSelfClaim && (
+                        <MetaText>
+                          모자이크 해제:{" "}
+                          {s.wantsMosaicRemoved ? "원함" : "원치 않음"} · Memory
+                          게시: {s.wantsPublish ? "동의" : "비동의"}
+                        </MetaText>
+                      )}
+                    </PendingItemText>
+                    <PendingItemActions>
+                      <ApproveButton
+                        type="button"
+                        onClick={() => handleOwnerDecision(s.id, "approved")}
+                      >
+                        공개
+                      </ApproveButton>
+                      <RejectButton
+                        type="button"
+                        onClick={() => handleOwnerDecision(s.id, "rejected")}
+                      >
+                        거절
+                      </RejectButton>
+                    </PendingItemActions>
+                  </PendingItem>
+                );
+              })}
             </PendingList>
           )}
           {claimError && <ErrorText>{claimError}</ErrorText>}
@@ -430,9 +664,7 @@ function PostDetailModal({
       {isOwner && (
         <PendingSection>
           <SectionLabel>Memory 게시 요청 ({pendingPublishRequests.length})</SectionLabel>
-          {published ? (
-            <EmptyNote>이 게시물은 이미 Memory에 게시됐어요.</EmptyNote>
-          ) : pendingPublishRequests.length === 0 ? (
+          {pendingPublishRequests.length === 0 ? (
             <EmptyNote>대기 중인 게시 요청이 없어요.</EmptyNote>
           ) : (
             <PendingList>
@@ -484,7 +716,7 @@ function PostDetailModal({
 
 export default function TagBoard() {
   const { currentUser, users } = useAuth();
-  const { posts } = useTags();
+  const { posts, isAdmin } = useTags();
   const { isBlocked } = useReports();
   const [newPostOpen, setNewPostOpen] = useState(false);
   const [selected, setSelected] = useState<TagPost | null>(null);
@@ -499,6 +731,9 @@ export default function TagBoard() {
 
   const visiblePosts = posts.filter((p) => {
     const owner = usersById.get(p.ownerId);
+    // Admins need to see every post to review pending identity checks,
+    // regardless of the post's grade/class visibility scope.
+    if (isAdmin) return true;
     return (
       !isBlocked(p.ownerId) &&
       (gradeFilter === "all" || owner?.grade === gradeFilter) &&
@@ -512,8 +747,8 @@ export default function TagBoard() {
         <div>
           <PageTitle>Anonymous Tagging</PageTitle>
           <PageSubtitle>
-            얼굴을 블러 처리한 사진에서 본인을 찾으면 "나예요"로 확인을
-            요청해보세요.
+            얼굴을 블러 처리한 사진에서 본인을 찾으면 "나예요"로, 다른 사람을
+            알아보면 "제보"로 알려주세요.
           </PageSubtitle>
         </div>
         <PillButton type="button" onClick={() => setNewPostOpen(true)}>
@@ -552,7 +787,10 @@ export default function TagBoard() {
       )}
 
       <NewPostModal open={newPostOpen} onClose={() => setNewPostOpen(false)} />
-      <PostDetailModal post={selected} onClose={() => setSelected(null)} />
+      <PostDetailModal
+        post={selected ? (posts.find((p) => p.id === selected.id) ?? null) : null}
+        onClose={() => setSelected(null)}
+      />
     </PageWrapper>
   );
 }

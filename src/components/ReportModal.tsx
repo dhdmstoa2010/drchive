@@ -10,6 +10,7 @@ import {
   Form,
   Select,
   Textarea,
+  ErrorText,
   ButtonRow,
   CancelButton,
 } from "./style/ReportModal.style";
@@ -35,11 +36,13 @@ export function ReportModal({
   const [reason, setReason] = useState(REASONS[0]);
   const [detail, setDetail] = useState("");
   const [done, setDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function reset() {
     setReason(REASONS[0]);
     setDetail("");
     setDone(false);
+    setError(null);
   }
 
   function handleClose() {
@@ -47,16 +50,20 @@ export function ReportModal({
     onClose();
   }
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    submitReport({
-      targetType,
-      targetId,
-      targetOwnerId,
-      reason,
-      detail: detail.trim() || undefined,
-    });
-    setDone(true);
+    try {
+      await submitReport({
+        targetType,
+        targetId,
+        targetOwnerId,
+        reason,
+        detail: detail.trim() || undefined,
+      });
+      setDone(true);
+    } catch {
+      setError("신고를 접수하지 못했어요. 잠시 후 다시 시도해주세요.");
+    }
   }
 
   return (
@@ -84,6 +91,7 @@ export function ReportModal({
             onChange={(e) => setDetail(e.target.value)}
             rows={3}
           />
+          {error && <ErrorText>{error}</ErrorText>}
           <ButtonRow>
             <CancelButton type="button" onClick={handleClose}>
               취소

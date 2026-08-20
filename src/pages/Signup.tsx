@@ -26,6 +26,7 @@ export default function Signup() {
   const { signup } = useAuth();
   const navigate = useNavigate();
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -39,7 +40,14 @@ export default function Signup() {
       setError("비밀번호가 일치하지 않아요.");
       return;
     }
-    const result = await signup({ name, email, password, grade, className });
+    const result = await signup({
+      name,
+      username,
+      email,
+      password,
+      grade,
+      className,
+    });
     if (!result.ok) {
       setError(result.error);
       return;
@@ -51,7 +59,9 @@ export default function Signup() {
     <AuthLayout>
       <AuthCard interactive={false}>
         <CardTitle>회원가입</CardTitle>
-        <CardSubtitle>학교 이메일 형식 확인 후 바로 가입돼요.</CardSubtitle>
+        <CardSubtitle>
+          학교 이메일로 재학생 여부만 확인해요. 로그인은 아이디로 해요.
+        </CardSubtitle>
 
         <FormEl onSubmit={handleSubmit}>
           <StyledInput
@@ -69,9 +79,15 @@ export default function Signup() {
             />
           </SelectRow>
           <StyledInput
+            required
+            placeholder="아이디 (로그인에 사용, 영문/숫자/밑줄 4~20자)"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+          <StyledInput
             type="email"
             required
-            placeholder="학교 이메일"
+            placeholder="학교 이메일 (@dsm.hs.kr)"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />

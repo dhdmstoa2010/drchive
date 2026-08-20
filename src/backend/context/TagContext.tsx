@@ -7,7 +7,12 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
-import type { SuggestionStatus, TagPost, TagSuggestion } from "../../types";
+import type {
+  SuggestionStatus,
+  TagPost,
+  TagSuggestion,
+  Visibility,
+} from "../../types";
 import { useAuth } from "../../hooks/useAuth";
 import { useNotifications } from "../../hooks/useNotifications";
 
@@ -15,6 +20,7 @@ type CreatePostInput = {
   imageUrl: string;
   photoId?: string;
   place?: string;
+  visibility: Visibility;
 };
 
 type SuggestInput = {
@@ -69,6 +75,7 @@ export function TagProvider({ children }: { children: ReactNode }) {
       photoId: input.photoId ?? null,
       place: input.place ?? null,
       imageUrl: input.imageUrl,
+      visibility: input.visibility,
       createdAt: new Date().toISOString(),
     });
   }

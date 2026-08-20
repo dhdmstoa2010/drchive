@@ -10,7 +10,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase";
-import type { Photo } from "../../types";
+import type { Photo, Visibility } from "../../types";
 import { useAuth } from "../../hooks/useAuth";
 
 type UploadInput = {
@@ -18,6 +18,7 @@ type UploadInput = {
   semesterLabel: string;
   imageUrl: string;
   description?: string;
+  visibility: Visibility;
 };
 
 type PhotoContextValue = {
@@ -52,6 +53,7 @@ export function PhotoProvider({ children }: { children: ReactNode }) {
       semesterLabel: input.semesterLabel,
       imageUrl: input.imageUrl,
       description: input.description?.trim() ?? "",
+      visibility: input.visibility,
       createdAt: serverTimestamp(),
     });
   }

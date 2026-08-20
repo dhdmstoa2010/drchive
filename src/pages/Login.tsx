@@ -17,13 +17,13 @@ import {
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    const result = await login(email, password);
+    const result = await login(username, password);
     if (!result.ok) {
       setError(result.error);
       return;
@@ -35,15 +35,14 @@ export default function Login() {
     <AuthLayout>
       <AuthCard interactive={false}>
         <CardTitle>로그인</CardTitle>
-        <CardSubtitle>학교 이메일로 로그인해주세요.</CardSubtitle>
+        <CardSubtitle>아이디로 로그인해주세요.</CardSubtitle>
 
         <FormEl onSubmit={handleSubmit}>
           <StyledInput
-            type="email"
             required
-            placeholder="학교 이메일"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            placeholder="아이디"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
           />
           <StyledInput
             type="password"

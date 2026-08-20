@@ -35,6 +35,13 @@ export const PageSubtitle = styled.div`
   max-width: 520px;
 `;
 
+export const FilterRow = styled.div`
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+`;
+
 export const EmptyState = styled(GlassCard)`
   display: flex;
   align-items: center;

@@ -1,12 +1,15 @@
-import { useState, type ChangeEvent, type FormEvent } from "react";
+import { useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import { Modal } from "./Modal";
 import { PillButton } from "./ui/PillButton";
+import { VisibilityPicker } from "./ui/VisibilityPicker";
 import { usePhotos } from "../hooks/usePhotos";
 import { fileToResizedDataUrl } from "../utils/image";
+import type { Visibility } from "../types";
 import {
   Title,
   Subtitle,
   Form,
+  FieldLabel,
   Select,
   TextInput,
   DescriptionTextArea,
@@ -21,19 +24,11 @@ import {
   CancelButton,
 } from "./style/PhotoUploadModal.style";
 
-const PLACES = [
-  "Schoolyard",
-  "Cafeteria",
-  "Main Stairs",
-  "Music Room",
-  "Rooftop Garden",
-  "Front Gate",
-];
 const CUSTOM_PLACE = "직접 입력";
 
 const SEMESTERS = [
-  { id: "2026-1", label: "2026 Sem 1" },
-  { id: "2025-2", label: "2025 Sem 2" },
+  { id: "2026-1", label: "2026년 1학기" },
+  { id: "2025-2", label: "2025년 2학기" },
 ];
 
 type PhotoUploadModalProps = {
@@ -42,19 +37,47 @@ type PhotoUploadModalProps = {
 };
 
 export function PhotoUploadModal({ open, onClose }: PhotoUploadModalProps) {
-  const { uploadPhoto } = usePhotos();
-  const [place, setPlace] = useState(PLACES[0]);
+  const { photos, uploadPhoto } = usePhotos();
+
+  const placeOptions = useMemo(() => {
+    const counts = new Map<string, number>();
+    photos.forEach((p) => {
+      if (!p.place) return;
+      counts.set(p.place, (counts.get(p.place) ?? 0) + 1);
+    });
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([place]) => place);
+  }, [photos]);
+
+  const [place, setPlace] = useState(() => placeOptions[0] ?? CUSTOM_PLACE);
+  const [placeTouched, setPlaceTouched] = useState(false);
   const [customPlace, setCustomPlace] = useState("");
+
+  // placeOptions loads asynchronously from Firestore, so the very first
+  // render can compute an empty list before the modal ever opens. Once real
+  // data comes in, re-sync the default — unless the user already picked
+  // something themselves. Adjusted during render (not an effect) per
+  // https://react.dev/learn/you-might-not-need-an-effect.
+  const [syncedTopPlace, setSyncedTopPlace] = useState(placeOptions[0]);
+  if (!placeTouched && placeOptions[0] !== syncedTopPlace) {
+    setSyncedTopPlace(placeOptions[0]);
+    setPlace(placeOptions[0] ?? CUSTOM_PLACE);
+  }
+
   const [semesterLabel, setSemesterLabel] = useState(SEMESTERS[0].id);
   const [description, setDescription] = useState("");
+  const [visibility, setVisibility] = useState<Visibility>("grade");
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   function reset() {
-    setPlace(PLACES[0]);
+    setPlace(placeOptions[0] ?? CUSTOM_PLACE);
+    setPlaceTouched(false);
     setCustomPlace("");
     setSemesterLabel(SEMESTERS[0].id);
     setDescription("");
+    setVisibility("grade");
     setPreview(null);
     setError(null);
   }
@@ -90,6 +113,7 @@ export function PhotoUploadModal({ open, onClose }: PhotoUploadModalProps) {
       semesterLabel,
       imageUrl: preview,
       description,
+      visibility,
     });
     handleClose();
   }
@@ -100,17 +124,23 @@ export function PhotoUploadModal({ open, onClose }: PhotoUploadModalProps) {
       <Subtitle>장소를 태그하고 사진을 업로드해요.</Subtitle>
 
       <Form onSubmit={handleSubmit}>
-        <Select value={place} onChange={(e) => setPlace(e.target.value)}>
-          {PLACES.map((p) => (
+        <Select
+          value={place}
+          onChange={(e) => {
+            setPlace(e.target.value);
+            setPlaceTouched(true);
+          }}
+        >
+          {placeOptions.map((p) => (
             <option key={p} value={p}>
               {p}
             </option>
           ))}
-          <option value={CUSTOM_PLACE}>{CUSTOM_PLACE}</option>
+          <option value={CUSTOM_PLACE}>{CUSTOM_PLACE} (새 장소 추가)</option>
         </Select>
         {place === CUSTOM_PLACE && (
           <TextInput
-            placeholder="장소 이름"
+            placeholder="장소 이름 (예: 도서관, 급식실)"
             value={customPlace}
             onChange={(e) => setCustomPlace(e.target.value)}
           />
@@ -131,6 +161,10 @@ export function PhotoUploadModal({ open, onClose }: PhotoUploadModalProps) {
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
         />
+        <div>
+          <FieldLabel>공개 범위</FieldLabel>
+          <VisibilityPicker value={visibility} onChange={setVisibility} />
+        </div>
         <UploadZone $hasPreview={!!preview}>
           <HiddenFileInput type="file" accept="image/*" onChange={handleFile} />
           {preview ? (

@@ -1,3 +1,5 @@
+import type { Visibility } from "./visibility";
+
 export type Photo = {
   id: string;
   place: string;
@@ -7,4 +9,5 @@ export type Photo = {
   semesterLabel: string;
   imageUrl?: string;
   description?: string;
+  visibility?: Visibility;
 };

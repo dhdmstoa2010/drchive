@@ -37,8 +37,8 @@ import {
 } from "./style/Chronicle.style";
 
 const SEMESTERS = [
-  { id: "2026-1", label: "2026 Sem 1" },
-  { id: "2025-2", label: "2025 Sem 2" },
+  { id: "2026-1", label: "2026년 1학기" },
+  { id: "2025-2", label: "2025년 2학기" },
 ];
 
 function pickRandom<T>(arr: T[], count: number): T[] {

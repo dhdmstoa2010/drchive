@@ -89,3 +89,31 @@ export const DeleteButton = styled.button`
   padding: 0;
   cursor: pointer;
 `;
+
+export const ActionRow = styled.div`
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+`;
+
+export const BlockButton = styled.button`
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: ${colors.inkFaint};
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+`;
+
+export const ReportButton = styled.button`
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: ${colors.coralDeep};
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+`;

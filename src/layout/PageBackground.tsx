@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { useAuth } from "../hooks/useAuth";
+import { resolveThemeId } from "../styles/theme";
 import { Background } from "./style/PageBackground.style";
 
 type PageBackgroundProps = {
@@ -7,5 +9,12 @@ type PageBackgroundProps = {
 };
 
 export function PageBackground({ children, className = "" }: PageBackgroundProps) {
-  return <Background className={className}>{children}</Background>;
+  const { currentUser } = useAuth();
+  const themeId = resolveThemeId(currentUser?.themeColor);
+
+  return (
+    <Background className={className} $themeId={themeId}>
+      {children}
+    </Background>
+  );
 }

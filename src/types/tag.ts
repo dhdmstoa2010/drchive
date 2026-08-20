@@ -1,3 +1,5 @@
+import type { Visibility } from "./visibility";
+
 export type TagPost = {
   id: string;
   ownerId: string;
@@ -5,6 +7,7 @@ export type TagPost = {
   place?: string;
   imageUrl: string;
   createdAt: string;
+  visibility?: Visibility;
 };
 
 export type SuggestionStatus = "pending" | "approved" | "rejected";

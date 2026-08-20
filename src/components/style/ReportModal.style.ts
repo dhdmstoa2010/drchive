@@ -36,6 +36,12 @@ export const Textarea = styled.textarea`
   resize: none;
 `;
 
+export const ErrorText = styled.div`
+  font-size: 12px;
+  font-weight: 600;
+  color: ${colors.coralDeep};
+`;
+
 export const ButtonRow = styled.div`
   display: flex;
   justify-content: flex-end;

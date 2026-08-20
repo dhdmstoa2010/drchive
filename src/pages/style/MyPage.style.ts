@@ -119,6 +119,57 @@ export const WithdrawButton = styled.button`
   cursor: pointer;
 `;
 
+export const ThemeCard = styled(GlassCard)`
+  padding: 20px 24px;
+`;
+
+export const ThemeErrorText = styled.div`
+  font-size: 12px;
+  font-weight: 600;
+  color: ${colors.coralDeep};
+  margin-top: 10px;
+`;
+
+export const ThemeSwatchRow = styled.div`
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+`;
+
+export const ThemeSwatchButton = styled.button<{
+  $background: string;
+  $active: boolean;
+}>`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+
+  &::before {
+    content: "";
+    display: block;
+    width: 44px;
+    height: 44px;
+    border-radius: 9999px;
+    background-image: ${({ $background }) => $background};
+    box-shadow: ${({ $active }) =>
+      $active
+        ? `0 0 0 3px #fff, 0 0 0 5px ${colors.lavenderDeep}`
+        : "0 0 0 2px rgba(255,255,255,0.8)"};
+    transition: box-shadow 150ms ease;
+  }
+`;
+
+export const ThemeSwatchLabel = styled.span<{ $active: boolean }>`
+  font-size: 12px;
+  font-weight: ${({ $active }) => ($active ? 700 : 500)};
+  color: ${({ $active }) => ($active ? colors.lavenderDeep : colors.inkFaint)};
+`;
+
 export const Section = styled.div``;
 
 export const SectionTitle = styled.div`

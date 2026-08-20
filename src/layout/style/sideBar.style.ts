@@ -1,7 +1,10 @@
 import styled from "@emotion/styled";
-import { gradients, shadows } from "../../styles/theme";
+import { backgroundThemes, gradients, shadows, type BackgroundThemeId } from "../../styles/theme";
 
-export const SidebarContainer = styled.div<{ $expanded: boolean }>`
+export const SidebarContainer = styled.div<{
+  $expanded: boolean;
+  $themeId: BackgroundThemeId;
+}>`
   position: fixed;
   top: 0;
   left: 0;
@@ -12,8 +15,8 @@ export const SidebarContainer = styled.div<{ $expanded: boolean }>`
   gap: 18px;
   padding: 22px 16px;
   box-sizing: border-box;
-  transition: width 220ms ease-in-out;
-  background-image: ${gradients.sidebar};
+  transition: width 220ms ease-in-out, background-image 300ms ease;
+  background-image: ${({ $themeId }) => backgroundThemes[$themeId].sidebar};
   backdrop-filter: blur(30px) saturate(200%);
   border-right: 1.5px solid rgba(255, 255, 255, 0.4);
   box-shadow: ${shadows.sidebar};

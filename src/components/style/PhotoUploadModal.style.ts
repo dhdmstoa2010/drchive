@@ -22,6 +22,13 @@ export const Form = styled.form`
   margin-top: 20px;
 `;
 
+export const FieldLabel = styled.div`
+  font-size: 12px;
+  font-weight: 700;
+  color: ${colors.inkFaint};
+  margin-bottom: 6px;
+`;
+
 export const Select = styled.select`
   ${selectStyles}
 `;

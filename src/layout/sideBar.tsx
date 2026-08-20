@@ -1,6 +1,7 @@
 import SidebarNavItem from "./SidebarNavItem";
 import { NotificationBell } from "../components/NotificationBell";
 import { useAuth } from "../hooks/useAuth";
+import { resolveThemeId } from "../styles/theme";
 import {
   SidebarContainer,
   TopBar,
@@ -60,9 +61,10 @@ export default function SideBar({
 }: SideBarProps) {
   const { currentUser } = useAuth();
   const initials = currentUser?.name ? currentUser.name.slice(0, 2) : "??";
+  const themeId = resolveThemeId(currentUser?.themeColor);
 
   return (
-    <SidebarContainer $expanded={expanded}>
+    <SidebarContainer $expanded={expanded} $themeId={themeId}>
       <TopBar $expanded={expanded}>
         <Logo>{expanded ? "Drchive" : "D"}</Logo>
         <IconControls>

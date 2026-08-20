@@ -1,14 +1,17 @@
-import { useState, type ChangeEvent, type MouseEvent } from "react";
+import { useMemo, useState, type ChangeEvent, type MouseEvent } from "react";
 import { PillButton } from "../components/ui/PillButton";
 import { Modal } from "../components/Modal";
 import { BlurCanvas } from "../components/BlurCanvas";
 import { ReportModal } from "../components/ReportModal";
+import { VisibilityPicker } from "../components/ui/VisibilityPicker";
 import { useAuth } from "../hooks/useAuth";
 import { usePhotos } from "../hooks/usePhotos";
 import { useTags } from "../hooks/useTags";
 import { useReports } from "../hooks/useReports";
 import { fileToResizedDataUrl } from "../utils/image";
-import type { TagPost } from "../types";
+import { isVisibleToViewer } from "../utils/visibility";
+import { GRADE_FILTERS } from "../constants/grade";
+import type { TagPost, Visibility } from "../types";
 import {
   PageWrapper,
   PageHeaderRow,
@@ -52,6 +55,7 @@ import {
   PendingItemActions,
   ApproveButton,
   RejectButton,
+  FilterRow,
 } from "./style/Tagging.style";
 
 function NewPostModal({
@@ -72,9 +76,11 @@ function NewPostModal({
     photoId?: string;
     place?: string;
   } | null>(null);
+  const [visibility, setVisibility] = useState<Visibility>("grade");
 
   function handleClose() {
     setSelectedImage(null);
+    setVisibility("grade");
     onClose();
   }
 
@@ -129,6 +135,11 @@ function NewPostModal({
               </PhotoRow>
             </div>
           )}
+
+          <div>
+            <FieldLabel>공개 범위</FieldLabel>
+            <VisibilityPicker value={visibility} onChange={setVisibility} />
+          </div>
         </FormSection>
       ) : (
         <BlurWrap>
@@ -140,6 +151,7 @@ function NewPostModal({
                 imageUrl: dataUrl,
                 photoId: selectedImage.photoId,
                 place: selectedImage.place,
+                visibility,
               });
               handleClose();
             }}
@@ -287,12 +299,28 @@ function PostDetailModal({
 }
 
 export default function TagBoard() {
+  const { currentUser, users } = useAuth();
   const { posts } = useTags();
   const { isBlocked } = useReports();
   const [newPostOpen, setNewPostOpen] = useState(false);
   const [selected, setSelected] = useState<TagPost | null>(null);
+  const [gradeFilter, setGradeFilter] = useState<number | "all">(
+    currentUser?.grade ?? "all",
+  );
 
-  const visiblePosts = posts.filter((p) => !isBlocked(p.ownerId));
+  const usersById = useMemo(
+    () => new Map(users.map((u) => [u.id, u])),
+    [users],
+  );
+
+  const visiblePosts = posts.filter((p) => {
+    const owner = usersById.get(p.ownerId);
+    return (
+      !isBlocked(p.ownerId) &&
+      (gradeFilter === "all" || owner?.grade === gradeFilter) &&
+      isVisibleToViewer(p.visibility, owner, currentUser ?? undefined)
+    );
+  });
 
   return (
     <PageWrapper>
@@ -307,6 +335,19 @@ export default function TagBoard() {
           + 새 게시물
         </PillButton>
       </PageHeaderRow>
+
+      <FilterRow>
+        {GRADE_FILTERS.map((g) => (
+          <PillButton
+            key={g.id}
+            type="button"
+            active={gradeFilter === g.id}
+            onClick={() => setGradeFilter(g.id)}
+          >
+            {g.label}
+          </PillButton>
+        ))}
+      </FilterRow>
 
       {visiblePosts.length === 0 ? (
         <EmptyState interactive={false}>아직 게시물이 없어요.</EmptyState>

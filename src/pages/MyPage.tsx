@@ -8,6 +8,11 @@ import { useCapsules } from "../hooks/useCapsules";
 import { useTags } from "../hooks/useTags";
 import { useReports } from "../hooks/useReports";
 import {
+  backgroundThemes,
+  resolveThemeId,
+  type BackgroundThemeId,
+} from "../styles/theme";
+import {
   AccountActionsRow,
   Avatar,
   CancelButton,
@@ -40,6 +45,11 @@ import {
   Section,
   SectionTitle,
   StatusTag,
+  ThemeCard,
+  ThemeErrorText,
+  ThemeSwatchButton,
+  ThemeSwatchLabel,
+  ThemeSwatchRow,
   UnblockButton,
   WithdrawButton,
 } from "./style/MyPage.style";
@@ -64,6 +74,7 @@ export default function MyPage() {
   const [className, setClassName] = useState(currentUser?.className ?? 1);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [withdrawError, setWithdrawError] = useState<string | null>(null);
+  const [themeError, setThemeError] = useState<string | null>(null);
 
   if (!currentUser) return null;
 
@@ -83,6 +94,19 @@ export default function MyPage() {
       className,
     });
     setEditing(false);
+  }
+
+  const activeThemeId: BackgroundThemeId = resolveThemeId(
+    currentUser.themeColor,
+  );
+
+  async function handleThemeSelect(id: BackgroundThemeId) {
+    try {
+      setThemeError(null);
+      await updateProfile({ themeColor: id });
+    } catch {
+      setThemeError("테마를 저장하지 못했어요. 잠시 후 다시 시도해주세요.");
+    }
   }
 
   async function handleLogout() {
@@ -114,8 +138,8 @@ export default function MyPage() {
               <div>
                 <ProfileName>{currentUser.name}</ProfileName>
                 <ProfileMeta>
-                  {currentUser.grade}학년 {currentUser.className}반 ·{" "}
-                  {currentUser.email}
+                  {currentUser.grade}학년 {currentUser.className}반 · @
+                  {currentUser.username}
                 </ProfileMeta>
               </div>
             ) : (
@@ -180,6 +204,30 @@ export default function MyPage() {
           </WithdrawButton>
         </AccountActionsRow>
       </ProfileCard>
+
+      <Section>
+        <SectionTitle>테마 배경색</SectionTitle>
+        <ThemeCard interactive={false}>
+          <ThemeSwatchRow>
+            {(Object.keys(backgroundThemes) as BackgroundThemeId[]).map(
+              (id) => (
+                <ThemeSwatchButton
+                  key={id}
+                  type="button"
+                  $background={backgroundThemes[id].swatch}
+                  $active={activeThemeId === id}
+                  onClick={() => handleThemeSelect(id)}
+                >
+                  <ThemeSwatchLabel $active={activeThemeId === id}>
+                    {backgroundThemes[id].label}
+                  </ThemeSwatchLabel>
+                </ThemeSwatchButton>
+              ),
+            )}
+          </ThemeSwatchRow>
+          {themeError && <ThemeErrorText>{themeError}</ThemeErrorText>}
+        </ThemeCard>
+      </Section>
 
       <Section>
         <SectionTitle>내 업로드 사진 ({myPhotos.length})</SectionTitle>

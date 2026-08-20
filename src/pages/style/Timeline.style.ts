@@ -33,6 +33,13 @@ export const PageSubtitle = styled.div`
   max-width: 520px;
 `;
 
+export const FilterColumn = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+`;
+
 export const FilterRow = styled.div`
   display: flex;
   gap: 8px;

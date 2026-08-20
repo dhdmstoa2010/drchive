@@ -99,6 +99,110 @@ export const gradients = {
   ],
 };
 
+function sidebarGradient(top: string, bottom: string) {
+  return `
+    linear-gradient(
+      165deg,
+      ${top} 0%,
+      ${bottom} 40%,
+      ${bottom} 100%
+    ),
+    radial-gradient(70% 40% at 20% 0%, rgba(255, 255, 255, 0.3), transparent 60%)
+  `;
+}
+
+export const backgroundThemes = {
+  default: {
+    label: "기본",
+    swatch: "linear-gradient(135deg, #daeaf1, #f9e8a2, #ffe6e6)",
+    gradient: gradients.page,
+    sidebar: gradients.sidebar,
+  },
+  lavender: {
+    label: "라벤더",
+    swatch: "linear-gradient(135deg, #e3d9f7, #f3d9f9, #dbe6ff)",
+    gradient: `
+      radial-gradient(circle at 12% 18%, #e3d9f7 0%, transparent 45%),
+      radial-gradient(circle at 85% 12%, #f3d9f9 0%, transparent 42%),
+      radial-gradient(circle at 78% 82%, #dbe6ff 0%, transparent 48%),
+      radial-gradient(circle at 25% 85%, #ece0ff 0%, transparent 40%),
+      radial-gradient(circle at 55% 50%, #ffffff 0%, transparent 60%)
+    `,
+    sidebar: sidebarGradient(
+      "rgba(180, 150, 210, 0.55)",
+      "rgba(140, 110, 170, 0.68)",
+    ),
+  },
+  mint: {
+    label: "민트",
+    swatch: "linear-gradient(135deg, #d7f0e3, #eaf7d0, #d0f0ea)",
+    gradient: `
+      radial-gradient(circle at 12% 18%, #d7f0e3 0%, transparent 45%),
+      radial-gradient(circle at 85% 12%, #eaf7d0 0%, transparent 42%),
+      radial-gradient(circle at 78% 82%, #d0f0ea 0%, transparent 48%),
+      radial-gradient(circle at 25% 85%, #e3f7e0 0%, transparent 40%),
+      radial-gradient(circle at 55% 50%, #ffffff 0%, transparent 60%)
+    `,
+    sidebar: sidebarGradient(
+      "rgba(140, 190, 170, 0.55)",
+      "rgba(95, 150, 130, 0.68)",
+    ),
+  },
+  peach: {
+    label: "피치",
+    swatch: "linear-gradient(135deg, #ffe0d0, #ffe6e6, #ffedcf)",
+    gradient: `
+      radial-gradient(circle at 12% 18%, #ffe0d0 0%, transparent 45%),
+      radial-gradient(circle at 85% 12%, #ffedcf 0%, transparent 42%),
+      radial-gradient(circle at 78% 82%, #ffe6e6 0%, transparent 48%),
+      radial-gradient(circle at 25% 85%, #ffdada 0%, transparent 40%),
+      radial-gradient(circle at 55% 50%, #ffffff 0%, transparent 60%)
+    `,
+    sidebar: sidebarGradient(
+      "rgba(220, 160, 140, 0.55)",
+      "rgba(190, 115, 95, 0.68)",
+    ),
+  },
+  sky: {
+    label: "스카이",
+    swatch: "linear-gradient(135deg, #cfe8fb, #dff0ff, #e8f3ff)",
+    gradient: `
+      radial-gradient(circle at 12% 18%, #cfe8fb 0%, transparent 45%),
+      radial-gradient(circle at 85% 12%, #e8f3ff 0%, transparent 42%),
+      radial-gradient(circle at 78% 82%, #dff0ff 0%, transparent 48%),
+      radial-gradient(circle at 25% 85%, #d6ecff 0%, transparent 40%),
+      radial-gradient(circle at 55% 50%, #ffffff 0%, transparent 60%)
+    `,
+    sidebar: sidebarGradient(
+      "rgba(130, 175, 220, 0.55)",
+      "rgba(90, 140, 195, 0.68)",
+    ),
+  },
+  mono: {
+    label: "모노",
+    swatch: "linear-gradient(135deg, #e2e2e2, #ececec, #f5f5f5)",
+    gradient: `
+      radial-gradient(circle at 12% 18%, #e2e2e2 0%, transparent 45%),
+      radial-gradient(circle at 85% 12%, #ececec 0%, transparent 42%),
+      radial-gradient(circle at 78% 82%, #e8e8e8 0%, transparent 48%),
+      radial-gradient(circle at 25% 85%, #f0f0f0 0%, transparent 40%),
+      radial-gradient(circle at 55% 50%, #ffffff 0%, transparent 60%)
+    `,
+    sidebar: sidebarGradient(
+      "rgba(165, 165, 165, 0.55)",
+      "rgba(120, 120, 120, 0.68)",
+    ),
+  },
+} as const;
+
+export type BackgroundThemeId = keyof typeof backgroundThemes;
+
+export function resolveThemeId(themeColor?: string): BackgroundThemeId {
+  return themeColor && themeColor in backgroundThemes
+    ? (themeColor as BackgroundThemeId)
+    : "default";
+}
+
 export const theme = { colors, shadows, gradients };
 
 export type Theme = typeof theme;

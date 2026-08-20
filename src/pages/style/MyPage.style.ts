@@ -135,18 +135,6 @@ export const AccountActionsRow = styled.div`
   margin-top: 24px;
 `;
 
-export const WithdrawButton = styled.button`
-  font-family: inherit;
-  background: none;
-  font-size: 12px;
-  font-weight: 600;
-  color: ${colors.coralDeep};
-  padding: 10px 16px;
-  border-radius: 9999px;
-  border: 1.5px solid ${colors.coral};
-  cursor: pointer;
-`;
-
 export const ThemeCard = styled(GlassCard)`
   padding: 20px 24px;
 `;
@@ -165,15 +153,34 @@ export const SuccessText = styled.div`
   margin-top: 10px;
 `;
 
-export const PasswordCard = styled(GlassCard)`
-  padding: 20px 24px;
+export const PasswordFooter = styled.div`
+  margin-top: 4px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(70, 55, 50, 0.1);
+`;
+
+export const FooterActionsRow = styled.div`
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+`;
+
+export const PasswordToggleLink = styled.button`
+  font-family: inherit;
+  background: none;
+  border: none;
+  font-size: 15px;
+  font-weight: 700;
+  color: ${colors.coralDeep};
+  cursor: pointer;
+  padding: 0;
 `;
 
 export const PasswordForm = styled.form`
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-width: 320px;
+  max-width: 280px;
 `;
 
 export const PasswordActionsRow = styled.div`

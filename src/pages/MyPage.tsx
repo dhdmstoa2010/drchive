@@ -29,6 +29,7 @@ import {
   ErrorText,
   FieldInput,
   FieldSelect,
+  FooterActionsRow,
   HiddenFileInput,
   ListColumn,
   ListItemCard,
@@ -37,8 +38,9 @@ import {
   PageTitle,
   PageWrapper,
   PasswordActionsRow,
-  PasswordCard,
+  PasswordFooter,
   PasswordForm,
+  PasswordToggleLink,
   PhotoGrid,
   PhotoThumb,
   PhotoThumbImage,
@@ -59,7 +61,6 @@ import {
   ThemeSwatchLabel,
   ThemeSwatchRow,
   UnblockButton,
-  WithdrawButton,
 } from "./style/MyPage.style";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -269,15 +270,6 @@ export default function MyPage() {
           <PillButton type="button" onClick={handleLogout}>
             로그아웃
           </PillButton>
-          <WithdrawButton
-            type="button"
-            onClick={() => {
-              setWithdrawError(null);
-              setWithdrawOpen(true);
-            }}
-          >
-            회원 탈퇴
-          </WithdrawButton>
         </AccountActionsRow>
       </ProfileCard>
 
@@ -303,63 +295,6 @@ export default function MyPage() {
           </ThemeSwatchRow>
           {themeError && <ErrorText>{themeError}</ErrorText>}
         </ThemeCard>
-      </Section>
-
-      <Section>
-        <SectionTitle>비밀번호 변경</SectionTitle>
-        <PasswordCard interactive={false}>
-          {!passwordOpen ? (
-            <PillButton
-              type="button"
-              onClick={() => {
-                setPasswordError(null);
-                setPasswordSuccess(false);
-                setPasswordOpen(true);
-              }}
-            >
-              비밀번호 변경
-            </PillButton>
-          ) : (
-            <PasswordForm onSubmit={handleChangePassword}>
-              <FieldInput
-                type="password"
-                required
-                placeholder="현재 비밀번호"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-              />
-              <FieldInput
-                type="password"
-                required
-                placeholder="새 비밀번호 (6자 이상)"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-              />
-              <FieldInput
-                type="password"
-                required
-                placeholder="새 비밀번호 확인"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
-              {passwordError && <ErrorText>{passwordError}</ErrorText>}
-              {passwordSuccess && (
-                <SuccessText>비밀번호가 변경됐어요.</SuccessText>
-              )}
-              <PasswordActionsRow>
-                <CancelButton
-                  type="button"
-                  onClick={() => setPasswordOpen(false)}
-                >
-                  닫기
-                </CancelButton>
-                <PillButton type="submit" active>
-                  변경하기
-                </PillButton>
-              </PasswordActionsRow>
-            </PasswordForm>
-          )}
-        </PasswordCard>
       </Section>
 
       <Section>
@@ -456,6 +391,75 @@ export default function MyPage() {
           </ListColumn>
         )}
       </Section>
+
+      <PasswordFooter>
+        {!passwordOpen ? (
+          <FooterActionsRow>
+            <PasswordToggleLink
+              type="button"
+              onClick={() => {
+                setPasswordError(null);
+                setPasswordSuccess(false);
+                setPasswordOpen(true);
+              }}
+            >
+              비밀번호 변경
+            </PasswordToggleLink>
+            <PasswordToggleLink
+              type="button"
+              onClick={() => {
+                setWithdrawError(null);
+                setWithdrawOpen(true);
+              }}
+            >
+              회원 탈퇴
+            </PasswordToggleLink>
+            <PasswordToggleLink
+              type="button"
+              onClick={() => {
+                setWithdrawError(null);
+                setWithdrawOpen(true);
+              }}
+            >
+              계정 삭제
+            </PasswordToggleLink>
+          </FooterActionsRow>
+        ) : (
+          <PasswordForm onSubmit={handleChangePassword}>
+            <FieldInput
+              type="password"
+              required
+              placeholder="현재 비밀번호"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+            />
+            <FieldInput
+              type="password"
+              required
+              placeholder="새 비밀번호 (6자 이상)"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+            />
+            <FieldInput
+              type="password"
+              required
+              placeholder="새 비밀번호 확인"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
+            {passwordError && <ErrorText>{passwordError}</ErrorText>}
+            {passwordSuccess && <SuccessText>비밀번호가 변경됐어요.</SuccessText>}
+            <PasswordActionsRow>
+              <CancelButton type="button" onClick={() => setPasswordOpen(false)}>
+                닫기
+              </CancelButton>
+              <PillButton type="submit" active>
+                변경하기
+              </PillButton>
+            </PasswordActionsRow>
+          </PasswordForm>
+        )}
+      </PasswordFooter>
 
       <ConfirmDialog
         open={withdrawOpen}

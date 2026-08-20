@@ -23,6 +23,7 @@ type UploadInput = {
 
 type PhotoContextValue = {
   photos: Photo[];
+  photosLoading: boolean;
   uploadPhoto: (input: UploadInput) => Promise<void>;
   deletePhoto: (id: string) => Promise<void>;
 };
@@ -33,12 +34,14 @@ export const PhotoContext = createContext<PhotoContextValue | null>(null);
 export function PhotoProvider({ children }: { children: ReactNode }) {
   const { currentUser } = useAuth();
   const [photos, setPhotos] = useState<Photo[]>([]);
+  const [photosLoading, setPhotosLoading] = useState(true);
 
   useEffect(() => {
     if (!currentUser) return;
     const q = query(collection(db, "photos"), orderBy("createdAt", "desc"));
     return onSnapshot(q, (snap) => {
       setPhotos(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Photo));
+      setPhotosLoading(false);
     });
   }, [currentUser]);
 
@@ -63,7 +66,9 @@ export function PhotoProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <PhotoContext.Provider value={{ photos, uploadPhoto, deletePhoto }}>
+    <PhotoContext.Provider
+      value={{ photos, photosLoading, uploadPhoto, deletePhoto }}
+    >
       {children}
     </PhotoContext.Provider>
   );

@@ -19,13 +19,3 @@ export const ContentInner = styled.div`
   width: 100%;
   max-width: 1240px;
 `;
-
-export const LoadingScreen = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  min-height: 100svh;
-  font-size: 14px;
-  color: rgba(60, 50, 45, 0.5);
-`;

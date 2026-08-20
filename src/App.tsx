@@ -8,6 +8,8 @@ import {
 } from "react-router-dom";
 import SideBar, { type TabId } from "./layout/SideBar";
 import { PageBackground } from "./layout/PageBackground";
+import { AppSkeleton } from "./layout/AppSkeleton";
+import { AuthLoadingScreen } from "./layout/AuthLoadingScreen";
 import Timeline from "./pages/Timeline";
 import Capsule from "./pages/Capsule";
 import Chronicle from "./pages/Chronicle";
@@ -19,7 +21,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import { useAuth } from "./hooks/useAuth";
 import { loadJSON, saveJSON } from "./backend/lib/storage";
-import { ContentArea, ContentInner, LoadingScreen } from "./style/App.style";
+import { ContentArea, ContentInner } from "./style/App.style";
 
 const TAB_PATHS: Record<TabId, string> = {
   home: "/",
@@ -80,7 +82,7 @@ function App() {
   }, [currentUser]);
 
   if (authLoading) {
-    return <LoadingScreen>불러오는 중...</LoadingScreen>;
+    return isPublicPath ? <AuthLoadingScreen /> : <AppSkeleton />;
   }
 
   if (!currentUser) {

@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthLayout } from "../layout/AuthLayout";
 import { useAuth } from "../hooks/useAuth";
+import { Spinner } from "../components/ui/Spinner";
 import {
   AuthCard,
   CardTitle,
@@ -20,12 +21,15 @@ export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    setSubmitting(true);
     const result = await login(username, password);
     if (!result.ok) {
       setError(result.error);
+      setSubmitting(false);
       return;
     }
     navigate("/");
@@ -52,8 +56,8 @@ export default function Login() {
             onChange={(e) => setPassword(e.target.value)}
           />
           {error && <ErrorText>{error}</ErrorText>}
-          <SubmitButton type="submit" active>
-            로그인
+          <SubmitButton type="submit" active disabled={submitting}>
+            {submitting ? <Spinner size={16} /> : "로그인"}
           </SubmitButton>
         </FormEl>
 

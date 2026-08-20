@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AuthLayout } from "../layout/AuthLayout";
 import { useAuth } from "../hooks/useAuth";
 import { Dropdown } from "../components/ui/Dropdown";
+import { Spinner } from "../components/ui/Spinner";
 import {
   AuthCard,
   CardTitle,
@@ -33,6 +34,7 @@ export default function Signup() {
   const [grade, setGrade] = useState(1);
   const [className, setClassName] = useState(1);
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -40,6 +42,7 @@ export default function Signup() {
       setError("비밀번호가 일치하지 않아요.");
       return;
     }
+    setSubmitting(true);
     const result = await signup({
       name,
       username,
@@ -50,6 +53,7 @@ export default function Signup() {
     });
     if (!result.ok) {
       setError(result.error);
+      setSubmitting(false);
       return;
     }
     navigate("/");
@@ -106,8 +110,8 @@ export default function Signup() {
             onChange={(e) => setConfirm(e.target.value)}
           />
           {error && <ErrorText>{error}</ErrorText>}
-          <SubmitButton type="submit" active>
-            가입하기
+          <SubmitButton type="submit" active disabled={submitting}>
+            {submitting ? <Spinner size={16} /> : "가입하기"}
           </SubmitButton>
         </FormEl>
 

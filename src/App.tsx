@@ -12,6 +12,7 @@ import Timeline from "./pages/Timeline";
 import Capsule from "./pages/Capsule";
 import Chronicle from "./pages/Chronicle";
 import TagBoard from "./pages/Tagging";
+import Members from "./pages/Members";
 import MyPage from "./pages/MyPage";
 import Onboarding from "./pages/Onboarding";
 import Login from "./pages/Login";
@@ -25,6 +26,7 @@ const TAB_PATHS: Record<TabId, string> = {
   capsule: "/capsule",
   chronicle: "/chronicle",
   tag: "/tag",
+  members: "/members",
   mypage: "/mypage",
 };
 
@@ -57,6 +59,7 @@ function AuthedShell() {
             <Route path="/capsule" element={<Capsule />} />
             <Route path="/chronicle" element={<Chronicle />} />
             <Route path="/tag" element={<TagBoard />} />
+            <Route path="/members" element={<Members />} />
             <Route path="/mypage" element={<MyPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

@@ -17,13 +17,20 @@ import {
   NavList,
 } from "./style/sideBar.style";
 
-export type TabId = "home" | "capsule" | "chronicle" | "tag" | "mypage";
+export type TabId =
+  | "home"
+  | "capsule"
+  | "chronicle"
+  | "tag"
+  | "members"
+  | "mypage";
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "home", label: "Timeline" },
   { id: "capsule", label: "Time Capsule" },
   { id: "chronicle", label: "Chronicle" },
   { id: "tag", label: "Anonymous Tagging" },
+  { id: "members", label: "Members" },
 ];
 
 function ChevronIcon({ expanded }: { expanded: boolean }) {

@@ -88,7 +88,9 @@ export default function Members() {
               <MemberGrid>
                 {group.members.map((u) => (
                   <MemberCard key={u.id} interactive={false}>
-                    <Avatar>{u.name.slice(0, 2)}</Avatar>
+                    <Avatar $imageUrl={u.avatarUrl}>
+                      {!u.avatarUrl && u.name.slice(0, 2)}
+                    </Avatar>
                     <div>
                       <MemberName>
                         {u.name}

@@ -83,7 +83,9 @@ export default function SideBar({
       </TopBar>
 
       <ProfileCard onClick={() => onNavigate("mypage")} $expanded={expanded}>
-        <Avatar>{initials}</Avatar>
+        <Avatar $imageUrl={currentUser?.avatarUrl}>
+          {!currentUser?.avatarUrl && initials}
+        </Avatar>
         {expanded && (
           <ProfileText>
             <ProfileName>{currentUser?.name ?? "게스트"}</ProfileName>

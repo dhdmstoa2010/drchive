@@ -8,9 +8,12 @@ import {
 import {
   createUserWithEmailAndPassword,
   deleteUser,
+  EmailAuthProvider,
   onAuthStateChanged,
+  reauthenticateWithCredential,
   signInWithEmailAndPassword,
   signOut,
+  updatePassword,
 } from "firebase/auth";
 import {
   collection,
@@ -61,8 +64,14 @@ type AuthContextValue = {
   logout: () => Promise<void>;
   withdraw: () => Promise<AuthResult>;
   updateProfile: (
-    patch: Partial<Pick<User, "name" | "grade" | "className" | "themeColor">>,
+    patch: Partial<
+      Pick<User, "name" | "grade" | "className" | "themeColor" | "avatarUrl">
+    >,
   ) => Promise<void>;
+  changePassword: (
+    currentPassword: string,
+    newPassword: string,
+  ) => Promise<AuthResult>;
 };
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -256,11 +265,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function updateProfile(
-    patch: Partial<Pick<User, "name" | "grade" | "className" | "themeColor">>,
+    patch: Partial<
+      Pick<User, "name" | "grade" | "className" | "themeColor" | "avatarUrl">
+    >,
   ) {
     const firebaseUser = auth.currentUser;
     if (!firebaseUser) return;
     await updateDoc(doc(db, "users", firebaseUser.uid), patch);
+  }
+
+  async function changePassword(
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<AuthResult> {
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser || !firebaseUser.email) {
+      return { ok: false, error: "로그인이 필요해요." };
+    }
+    if (newPassword.length < 6) {
+      return { ok: false, error: "새 비밀번호는 6자 이상이어야 해요." };
+    }
+    try {
+      // Password changes require a "fresh" session, so reauthenticate with
+      // the current password first — this also doubles as verifying it.
+      const credential = EmailAuthProvider.credential(
+        firebaseUser.email,
+        currentPassword,
+      );
+      await reauthenticateWithCredential(firebaseUser, credential);
+      await updatePassword(firebaseUser, newPassword);
+      return { ok: true };
+    } catch (err) {
+      const code = (err as { code?: string }).code ?? "";
+      if (code === "auth/wrong-password" || code === "auth/invalid-credential") {
+        return { ok: false, error: "현재 비밀번호가 올바르지 않아요." };
+      }
+      return {
+        ok: false,
+        error: authErrorMessage(code),
+      };
+    }
   }
 
   const value: AuthContextValue = {
@@ -272,6 +316,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logout,
     withdraw,
     updateProfile,
+    changePassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

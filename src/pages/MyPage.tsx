@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ChangeEvent, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { PillButton } from "../components/ui/PillButton";
 import { ConfirmDialog } from "../components/ConfirmDialog";
@@ -7,6 +7,7 @@ import { usePhotos } from "../hooks/usePhotos";
 import { useCapsules } from "../hooks/useCapsules";
 import { useTags } from "../hooks/useTags";
 import { useReports } from "../hooks/useReports";
+import { fileToResizedDataUrl } from "../utils/image";
 import {
   backgroundThemes,
   resolveThemeId,
@@ -15,6 +16,8 @@ import {
 import {
   AccountActionsRow,
   Avatar,
+  AvatarWrap,
+  AvatarEditButton,
   CancelButton,
   CapsuleCard,
   CapsuleLinkButton,
@@ -23,14 +26,19 @@ import {
   EditFieldsRow,
   EmptyCard,
   EmptyPhotoCard,
+  ErrorText,
   FieldInput,
   FieldSelect,
+  HiddenFileInput,
   ListColumn,
   ListItemCard,
   ListItemText,
   PageSubtitle,
   PageTitle,
   PageWrapper,
+  PasswordActionsRow,
+  PasswordCard,
+  PasswordForm,
   PhotoGrid,
   PhotoThumb,
   PhotoThumbImage,
@@ -45,8 +53,8 @@ import {
   Section,
   SectionTitle,
   StatusTag,
+  SuccessText,
   ThemeCard,
-  ThemeErrorText,
   ThemeSwatchButton,
   ThemeSwatchLabel,
   ThemeSwatchRow,
@@ -61,7 +69,14 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export default function MyPage() {
-  const { currentUser, users, logout, withdraw, updateProfile } = useAuth();
+  const {
+    currentUser,
+    users,
+    logout,
+    withdraw,
+    updateProfile,
+    changePassword,
+  } = useAuth();
   const { photos } = usePhotos();
   const { capsules } = useCapsules();
   const { suggestions } = useTags();
@@ -75,6 +90,13 @@ export default function MyPage() {
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [withdrawError, setWithdrawError] = useState<string | null>(null);
   const [themeError, setThemeError] = useState<string | null>(null);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
 
   if (!currentUser) return null;
 
@@ -109,6 +131,40 @@ export default function MyPage() {
     }
   }
 
+  async function handleAvatarChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      setAvatarError(null);
+      const dataUrl = await fileToResizedDataUrl(file, 240, 0.85);
+      await updateProfile({ avatarUrl: dataUrl });
+    } catch {
+      setAvatarError(
+        "프로필 사진을 저장하지 못했어요. 잠시 후 다시 시도해주세요.",
+      );
+    }
+  }
+
+  async function handleChangePassword(e: FormEvent) {
+    e.preventDefault();
+    setPasswordSuccess(false);
+    if (newPassword !== confirmPassword) {
+      setPasswordError("새 비밀번호가 일치하지 않아요.");
+      return;
+    }
+    const result = await changePassword(currentPassword, newPassword);
+    if (!result.ok) {
+      setPasswordError(result.error);
+      return;
+    }
+    setPasswordError(null);
+    setPasswordSuccess(true);
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+  }
+
   async function handleLogout() {
     await logout();
     navigate("/login");
@@ -133,7 +189,26 @@ export default function MyPage() {
       <ProfileCard interactive={false}>
         <ProfileHeaderRow>
           <ProfileIdentity>
-            <Avatar>{currentUser.name.slice(0, 2)}</Avatar>
+            <AvatarWrap>
+              <Avatar $imageUrl={currentUser.avatarUrl}>
+                {!currentUser.avatarUrl && currentUser.name.slice(0, 2)}
+              </Avatar>
+              <AvatarEditButton
+                type="button"
+                onClick={() =>
+                  document.getElementById("avatar-file-input")?.click()
+                }
+                aria-label="프로필 사진 변경"
+              >
+                🖊
+              </AvatarEditButton>
+              <HiddenFileInput
+                id="avatar-file-input"
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarChange}
+              />
+            </AvatarWrap>
             {!editing ? (
               <div>
                 <ProfileName>{currentUser.name}</ProfileName>
@@ -141,6 +216,7 @@ export default function MyPage() {
                   {currentUser.grade}학년 {currentUser.className}반 · @
                   {currentUser.username}
                 </ProfileMeta>
+                {avatarError && <ErrorText>{avatarError}</ErrorText>}
               </div>
             ) : (
               <EditFieldsRow>
@@ -225,8 +301,65 @@ export default function MyPage() {
               ),
             )}
           </ThemeSwatchRow>
-          {themeError && <ThemeErrorText>{themeError}</ThemeErrorText>}
+          {themeError && <ErrorText>{themeError}</ErrorText>}
         </ThemeCard>
+      </Section>
+
+      <Section>
+        <SectionTitle>비밀번호 변경</SectionTitle>
+        <PasswordCard interactive={false}>
+          {!passwordOpen ? (
+            <PillButton
+              type="button"
+              onClick={() => {
+                setPasswordError(null);
+                setPasswordSuccess(false);
+                setPasswordOpen(true);
+              }}
+            >
+              비밀번호 변경
+            </PillButton>
+          ) : (
+            <PasswordForm onSubmit={handleChangePassword}>
+              <FieldInput
+                type="password"
+                required
+                placeholder="현재 비밀번호"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+              />
+              <FieldInput
+                type="password"
+                required
+                placeholder="새 비밀번호 (6자 이상)"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+              <FieldInput
+                type="password"
+                required
+                placeholder="새 비밀번호 확인"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+              {passwordError && <ErrorText>{passwordError}</ErrorText>}
+              {passwordSuccess && (
+                <SuccessText>비밀번호가 변경됐어요.</SuccessText>
+              )}
+              <PasswordActionsRow>
+                <CancelButton
+                  type="button"
+                  onClick={() => setPasswordOpen(false)}
+                >
+                  닫기
+                </CancelButton>
+                <PillButton type="submit" active>
+                  변경하기
+                </PillButton>
+              </PasswordActionsRow>
+            </PasswordForm>
+          )}
+        </PasswordCard>
       </Section>
 
       <Section>
@@ -298,10 +431,7 @@ export default function MyPage() {
               return (
                 <ListItemCard key={id} interactive={false}>
                   <ListItemText>{user?.name ?? "알 수 없음"}</ListItemText>
-                  <UnblockButton
-                    type="button"
-                    onClick={() => unblockUser(id)}
-                  >
+                  <UnblockButton type="button" onClick={() => unblockUser(id)}>
                     차단 해제
                   </UnblockButton>
                 </ListItemCard>

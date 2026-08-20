@@ -31,7 +31,11 @@ export function resizeImage(
   return canvas.toDataURL("image/jpeg", quality);
 }
 
-export async function fileToResizedDataUrl(file: File): Promise<string> {
+export async function fileToResizedDataUrl(
+  file: File,
+  maxDimension = MAX_DIMENSION,
+  quality = JPEG_QUALITY,
+): Promise<string> {
   const reader = new FileReader();
   const rawDataUrl = await new Promise<string>((resolve, reject) => {
     reader.onload = () => resolve(reader.result as string);
@@ -39,5 +43,5 @@ export async function fileToResizedDataUrl(file: File): Promise<string> {
     reader.readAsDataURL(file);
   });
   const img = await loadImage(rawDataUrl);
-  return resizeImage(img);
+  return resizeImage(img, maxDimension, quality);
 }

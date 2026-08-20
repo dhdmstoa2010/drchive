@@ -82,11 +82,12 @@ export const MemberCard = styled(GlassCard)`
   gap: 12px;
 `;
 
-export const Avatar = styled.div`
+export const Avatar = styled.div<{ $imageUrl?: string }>`
   width: 38px;
   height: 38px;
   border-radius: 9999px;
-  background: ${gradients.avatar};
+  background: ${({ $imageUrl }) =>
+    $imageUrl ? `center/cover no-repeat url(${$imageUrl})` : gradients.avatar};
   color: #fff;
   font-size: 13px;
   font-weight: 700;

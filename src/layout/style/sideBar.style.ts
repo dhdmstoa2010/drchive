@@ -77,12 +77,15 @@ export const ProfileCard = styled.div<{ $expanded: boolean }>`
   justify-content: ${({ $expanded }) => ($expanded ? "flex-start" : "center")};
 `;
 
-export const Avatar = styled.div`
+export const Avatar = styled.div<{ $imageUrl?: string }>`
   width: 34px;
   height: 34px;
   border-radius: 9999px;
   flex-shrink: 0;
-  background-image: ${gradients.avatar};
+  background-image: ${({ $imageUrl }) =>
+    $imageUrl ? `url(${$imageUrl})` : gradients.avatar};
+  background-size: cover;
+  background-position: center;
   color: #fff;
   font-size: 12px;
   font-weight: 700;

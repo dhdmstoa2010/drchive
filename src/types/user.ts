@@ -7,4 +7,5 @@ export type User = {
   className: number;
   createdAt: string;
   themeColor?: string;
+  avatarUrl?: string;
 };

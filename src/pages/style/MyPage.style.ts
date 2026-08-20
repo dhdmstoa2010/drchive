@@ -43,11 +43,17 @@ export const ProfileIdentity = styled.div`
   gap: 16px;
 `;
 
-export const Avatar = styled.div`
+export const AvatarWrap = styled.div`
+  position: relative;
+  flex-shrink: 0;
+`;
+
+export const Avatar = styled.div<{ $imageUrl?: string }>`
   width: 64px;
   height: 64px;
   border-radius: 9999px;
-  background: ${gradients.avatar};
+  background: ${({ $imageUrl }) =>
+    $imageUrl ? `center/cover no-repeat url(${$imageUrl})` : gradients.avatar};
   color: #fff;
   font-size: 20px;
   font-weight: 700;
@@ -55,6 +61,28 @@ export const Avatar = styled.div`
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+`;
+
+export const AvatarEditButton = styled.button`
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  background: #fff;
+  border: 1.5px solid rgba(70, 55, 50, 0.16);
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+`;
+
+export const HiddenFileInput = styled.input`
+  display: none;
 `;
 
 export const ProfileName = styled.div`
@@ -123,11 +151,35 @@ export const ThemeCard = styled(GlassCard)`
   padding: 20px 24px;
 `;
 
-export const ThemeErrorText = styled.div`
+export const ErrorText = styled.div`
   font-size: 12px;
   font-weight: 600;
   color: ${colors.coralDeep};
   margin-top: 10px;
+`;
+
+export const SuccessText = styled.div`
+  font-size: 12px;
+  font-weight: 600;
+  color: ${colors.lavenderDeep};
+  margin-top: 10px;
+`;
+
+export const PasswordCard = styled(GlassCard)`
+  padding: 20px 24px;
+`;
+
+export const PasswordForm = styled.form`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 320px;
+`;
+
+export const PasswordActionsRow = styled.div`
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
 `;
 
 export const ThemeSwatchRow = styled.div`

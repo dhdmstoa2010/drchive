@@ -39,12 +39,14 @@ export const Chevron = styled.svg<{ $open: boolean }>`
   transform: rotate(${({ $open }) => ($open ? "180deg" : "0deg")});
 `;
 
+// Positioned via inline style (fixed, computed from the trigger's bounding
+// rect) because the menu is rendered through a portal — see Dropdown.tsx.
+// Anchoring it with position:absolute inside the trigger's own stacking
+// context made it count toward the nearest scrollable ancestor's overflow,
+// which made modals scroll/jump open whenever this menu opened inside one.
 export const Menu = styled.div`
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  right: 0;
-  z-index: 20;
+  position: fixed;
+  z-index: 1000;
   max-height: 240px;
   overflow-y: auto;
   background: #fff;

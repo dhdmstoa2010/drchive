@@ -3,7 +3,11 @@ export type NotificationType =
   | "tag_suggested"
   | "tag_approved"
   | "tag_rejected"
-  | "report_received";
+  | "report_received"
+  | "publish_requested"
+  | "publish_approved"
+  | "publish_rejected"
+  | "tag_claim_submitted";
 
 export type AppNotification = {
   id: string;

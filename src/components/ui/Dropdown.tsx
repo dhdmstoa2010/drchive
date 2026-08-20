@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Wrapper, Trigger, TriggerLabel, Chevron, Menu, Option } from "./style/Dropdown.style";
 
 export type DropdownOption<T extends string | number> = {
@@ -21,12 +22,29 @@ export function Dropdown<T extends string | number>({
 }: DropdownProps<T>) {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [menuRect, setMenuRect] = useState<{
+    top: number;
+    left: number;
+    width: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!open) return;
 
+    function updatePosition() {
+      const rect = wrapperRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      setMenuRect({ top: rect.bottom + 6, left: rect.left, width: rect.width });
+    }
+    updatePosition();
+
     function handlePointerDown(e: MouseEvent) {
-      if (!wrapperRef.current?.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        !wrapperRef.current?.contains(target) &&
+        !menuRef.current?.contains(target)
+      ) {
         setOpen(false);
       }
     }
@@ -36,9 +54,15 @@ export function Dropdown<T extends string | number>({
 
     document.addEventListener("mousedown", handlePointerDown);
     document.addEventListener("keydown", handleKeyDown);
+    // capture:true so this also fires for scrolls inside nested scroll
+    // containers (e.g. a modal's own overflow-y), not just window scroll.
+    window.addEventListener("scroll", updatePosition, true);
+    window.addEventListener("resize", updatePosition);
     return () => {
       document.removeEventListener("mousedown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("scroll", updatePosition, true);
+      window.removeEventListener("resize", updatePosition);
     };
   }, [open]);
 
@@ -64,25 +88,36 @@ export function Dropdown<T extends string | number>({
           />
         </Chevron>
       </Trigger>
-      {open && (
-        <Menu role="listbox">
-          {options.map((o) => (
-            <Option
-              key={o.value}
-              type="button"
-              role="option"
-              aria-selected={o.value === value}
-              $selected={o.value === value}
-              onClick={() => {
-                onChange(o.value);
-                setOpen(false);
-              }}
-            >
-              {o.label}
-            </Option>
-          ))}
-        </Menu>
-      )}
+      {open &&
+        menuRect &&
+        createPortal(
+          <Menu
+            ref={menuRef}
+            role="listbox"
+            style={{
+              top: menuRect.top,
+              left: menuRect.left,
+              width: menuRect.width,
+            }}
+          >
+            {options.map((o) => (
+              <Option
+                key={o.value}
+                type="button"
+                role="option"
+                aria-selected={o.value === value}
+                $selected={o.value === value}
+                onClick={() => {
+                  onChange(o.value);
+                  setOpen(false);
+                }}
+              >
+                {o.label}
+              </Option>
+            ))}
+          </Menu>,
+          document.body,
+        )}
     </Wrapper>
   );
 }

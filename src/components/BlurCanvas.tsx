@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type MouseEvent } from "react";
+import type { BlurRect } from "../types";
 import {
   Wrapper,
   HelperText,
@@ -21,7 +22,7 @@ const MAX_OUTPUT_DIMENSION = 1280;
 
 type BlurCanvasProps = {
   imageUrl: string;
-  onConfirm: (dataUrl: string) => void;
+  onConfirm: (dataUrl: string, blurRects: BlurRect[]) => void;
   onCancel: () => void;
 };
 
@@ -164,7 +165,13 @@ export function BlurCanvas({ imageUrl, onConfirm, onCancel }: BlurCanvasProps) {
     if (!ctx) return;
     ctx.drawImage(img, 0, 0, out.width, out.height);
     rects.forEach((r) => applyBlurRect(ctx, img, r, outputScale));
-    onConfirm(out.toDataURL("image/jpeg", 0.82));
+    const blurRects: BlurRect[] = rects.map((r) => ({
+      x: r.x / img.naturalWidth,
+      y: r.y / img.naturalHeight,
+      w: r.w / img.naturalWidth,
+      h: r.h / img.naturalHeight,
+    }));
+    onConfirm(out.toDataURL("image/jpeg", 0.82), blurRects);
   }
 
   return (

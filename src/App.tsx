@@ -10,7 +10,7 @@ import SideBar, { type TabId } from "./layout/SideBar";
 import { PageBackground } from "./layout/PageBackground";
 import { AppSkeleton } from "./layout/AppSkeleton";
 import { AuthLoadingScreen } from "./layout/AuthLoadingScreen";
-import Timeline from "./pages/Timeline";
+import Memory from "./pages/Memory";
 import Capsule from "./pages/Capsule";
 import Chronicle from "./pages/Chronicle";
 import TagBoard from "./pages/Tagging";
@@ -57,7 +57,7 @@ function AuthedShell() {
       <ContentArea $sidebarExpanded={sidebarExpanded}>
         <ContentInner>
           <Routes>
-            <Route path="/" element={<Timeline />} />
+            <Route path="/" element={<Memory />} />
             <Route path="/capsule" element={<Capsule />} />
             <Route path="/chronicle" element={<Chronicle />} />
             <Route path="/tag" element={<TagBoard />} />

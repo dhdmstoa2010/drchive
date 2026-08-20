@@ -24,7 +24,7 @@ type UploadInput = {
 type PhotoContextValue = {
   photos: Photo[];
   photosLoading: boolean;
-  uploadPhoto: (input: UploadInput) => Promise<void>;
+  uploadPhoto: (input: UploadInput) => Promise<string>;
   deletePhoto: (id: string) => Promise<void>;
 };
 
@@ -46,7 +46,7 @@ export function PhotoProvider({ children }: { children: ReactNode }) {
   }, [currentUser]);
 
   async function uploadPhoto(input: UploadInput) {
-    await addDoc(collection(db, "photos"), {
+    const ref = await addDoc(collection(db, "photos"), {
       place: input.place,
       date: new Date().toISOString().slice(0, 10).replace(/-/g, "."),
       uploader: currentUser
@@ -59,6 +59,7 @@ export function PhotoProvider({ children }: { children: ReactNode }) {
       visibility: input.visibility,
       createdAt: serverTimestamp(),
     });
+    return ref.id;
   }
 
   async function deletePhoto(id: string) {

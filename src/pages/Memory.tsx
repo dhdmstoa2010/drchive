@@ -19,15 +19,15 @@ import {
   FilterColumn,
   FilterRow,
   PhotoGrid,
-} from "./style/Timeline.style";
+} from "./style/Memory.style";
 
 const FILTERS: { id: string; label: string }[] = [
   { id: "all", label: "전체" },
   { id: "2026-1", label: "2026년 1학기" },
-  { id: "2025-2", label: "2025년 2학기" },
+  { id: "2026-2", label: "2026년 2학기" },
 ];
 
-export default function Timeline() {
+export default function Memory() {
   const { currentUser, users } = useAuth();
   const { photos, photosLoading } = usePhotos();
   const { isBlocked } = useReports();
@@ -59,7 +59,7 @@ export default function Timeline() {
     <PageWrapper>
       <HeaderRow>
         <div>
-          <PageTitle>Timeline</PageTitle>
+          <PageTitle>Memory</PageTitle>
           <PageSubtitle>업로드 된 사진들</PageSubtitle>
         </div>
         {photosLoading ? (
@@ -124,7 +124,10 @@ export default function Timeline() {
             ))}
       </PhotoGrid>
 
-      <PhotoUploadModal open={uploadOpen} onClose={() => setUploadOpen(false)} />
+      <PhotoUploadModal
+        open={uploadOpen}
+        onClose={() => setUploadOpen(false)}
+      />
       <PhotoDetailModal photo={selected} onClose={() => setSelected(null)} />
     </PageWrapper>
   );

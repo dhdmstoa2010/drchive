@@ -1,0 +1,84 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function ownerOfPost(postId) {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/tagPosts/$(postId)).data.ownerId == request.auth.uid;
+    }
+
+    // Member profiles (AuthContext) — everyone signed in can see the roster,
+    // but only the account owner can create/update/delete their own doc.
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isSelf(userId);
+    }
+
+    // Timeline/Memory photos (PhotoContext) — readable by anyone signed in,
+    // writable only by the uploader.
+    match /photos/{photoId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.uploaderId == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.uploaderId == request.auth.uid;
+    }
+
+    // Anonymous Tagging posts (TagContext) — owner-only write access.
+    match /tagPosts/{postId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+    }
+
+    // Tag suggestions ("제보") — anyone can submit, only the post owner can
+    // approve/reject.
+    match /tagSuggestions/{suggestionId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.submitterId == request.auth.uid;
+      allow update: if ownerOfPost(resource.data.postId);
+    }
+
+    // "Memory에 올려도 될까요?" publish requests — anyone can ask, only the
+    // tag post owner can approve/reject.
+    match /publishRequests/{requestId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.requesterId == request.auth.uid;
+      allow update: if ownerOfPost(resource.data.postId);
+    }
+
+    // In-app notifications — any signed-in user can create a notification
+    // for someone else (tag/publish/report flows all notify other users),
+    // but only the recipient can read or mark it.
+    match /notifications/{notificationId} {
+      allow read, update: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn();
+    }
+
+    // Time capsules (CapsuleContext) — visible/updatable by sender or
+    // recipient only.
+    match /capsules/{capsuleId} {
+      allow read, update: if isSignedIn() &&
+        (resource.data.senderId == request.auth.uid ||
+         resource.data.recipientId == request.auth.uid);
+      allow create: if isSignedIn() && request.resource.data.senderId == request.auth.uid;
+    }
+
+    // Reports (ReportContext) — reporter can create/read their own reports.
+    match /reports/{reportId} {
+      allow read: if isSignedIn() && resource.data.reporterId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.reporterId == request.auth.uid;
+    }
+
+    // Per-user block lists — only the owner can read/write their own doc.
+    match /blocks/{userId} {
+      allow read, write: if isSelf(userId);
+    }
+  }
+}

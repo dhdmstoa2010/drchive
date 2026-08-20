@@ -22,7 +22,6 @@ import {
   PostCard,
   PostThumb,
   PostCaption,
-  Input,
   Title,
   Subtitle,
   FormSection,
@@ -54,8 +53,14 @@ import {
   PendingItemText,
   PendingItemActions,
   ApproveButton,
+  AltApproveButton,
   RejectButton,
   FilterRow,
+  PostMeta,
+  ErrorText,
+  ClaimInput,
+  ClaimTextArea,
+  OriginalPreview,
 } from "./style/Tagging.style";
 
 function NewPostModal({
@@ -146,9 +151,11 @@ function NewPostModal({
           <BlurCanvas
             imageUrl={selectedImage.imageUrl}
             onCancel={() => setSelectedImage(null)}
-            onConfirm={(dataUrl) => {
+            onConfirm={(dataUrl, blurRects) => {
               createPost({
                 imageUrl: dataUrl,
+                originalImageUrl: selectedImage.imageUrl,
+                blurRects,
                 photoId: selectedImage.photoId,
                 place: selectedImage.place,
                 visibility,
@@ -169,21 +176,41 @@ function PostDetailModal({
   post: TagPost | null;
   onClose: () => void;
 }) {
-  const { currentUser } = useAuth();
-  const { suggestionsForPost, suggestTag, reviewSuggestion } = useTags();
+  const { currentUser, users } = useAuth();
+  const {
+    suggestionsForPost,
+    suggestTag,
+    reviewSuggestion,
+    publishRequestsForPost,
+    requestPublish,
+    reviewPublishRequest,
+  } = useTags();
   const { blockUser } = useReports();
-  const [name, setName] = useState("");
-  const [pending, setPending] = useState<{ x: number; y: number } | null>(null);
+  const [claiming, setClaiming] = useState(false);
+  const [claimedDate, setClaimedDate] = useState("");
+  const [claimInfo, setClaimInfo] = useState("");
+  const [pending, setPending] = useState({ x: 50, y: 50 });
   const [reportOpen, setReportOpen] = useState(false);
+  const [publishError, setPublishError] = useState<string | null>(null);
+  const [claimError, setClaimError] = useState<string | null>(null);
 
   if (!post) return null;
   const isOwner = currentUser?.id === post.ownerId;
+  const owner = users.find((u) => u.id === post.ownerId);
   const suggestions = suggestionsForPost(post.id);
   const approved = suggestions.filter((s) => s.status === "approved");
   const pendingList = suggestions.filter((s) => s.status === "pending");
+  const published = !!post.publishedPhotoId;
+  const publishRequests = publishRequestsForPost(post.id);
+  const myPublishRequest = publishRequests.find(
+    (r) => r.requesterId === currentUser?.id,
+  );
+  const pendingPublishRequests = publishRequests.filter(
+    (r) => r.status === "pending",
+  );
 
   function handleImageClick(e: MouseEvent<HTMLDivElement>) {
-    if (isOwner) return;
+    if (isOwner || !claiming) return;
     const bounds = e.currentTarget.getBoundingClientRect();
     setPending({
       x: ((e.clientX - bounds.left) / bounds.width) * 100,
@@ -191,16 +218,63 @@ function PostDetailModal({
     });
   }
 
-  function submitSuggestion() {
-    if (!pending || !name.trim()) return;
-    suggestTag({
-      postId: post!.id,
-      name: name.trim(),
-      x: pending.x,
-      y: pending.y,
-    });
-    setPending(null);
-    setName("");
+  async function submitClaim() {
+    if (!currentUser || !claimInfo.trim()) return;
+    setClaimError(null);
+    try {
+      await suggestTag({
+        postId: post!.id,
+        name: currentUser.name,
+        taggedUserId: currentUser.id,
+        claimedDate,
+        extraInfo: claimInfo,
+        x: pending.x,
+        y: pending.y,
+      });
+      setClaiming(false);
+      setPending({ x: 50, y: 50 });
+      setClaimedDate("");
+      setClaimInfo("");
+    } catch (err) {
+      console.error("본인 확인 요청 실패:", err);
+      setClaimError("요청을 보내지 못했어요. 잠시 후 다시 시도해주세요.");
+    }
+  }
+
+  async function handleRequestPublish() {
+    setPublishError(null);
+    try {
+      await requestPublish(post!.id);
+    } catch (err) {
+      console.error("Memory 게시 요청 실패:", err);
+      setPublishError("요청을 보내지 못했어요. 잠시 후 다시 시도해주세요.");
+    }
+  }
+
+  async function handlePublishDecision(
+    requestId: string,
+    decision: "blurred" | "original" | "rejected",
+  ) {
+    setPublishError(null);
+    try {
+      await reviewPublishRequest(requestId, decision);
+    } catch (err) {
+      console.error("Memory 게시 요청 처리 실패:", err);
+      setPublishError("처리하지 못했어요. 잠시 후 다시 시도해주세요.");
+    }
+  }
+
+  async function handleClaimDecision(
+    suggestionId: string,
+    decision: "approved" | "rejected",
+  ) {
+    setClaimError(null);
+    try {
+      await reviewSuggestion(suggestionId, decision);
+    } catch (err) {
+      console.error("본인 확인 요청 처리 실패:", err);
+      setClaimError("처리하지 못했어요. 잠시 후 다시 시도해주세요.");
+    }
   }
 
   return (
@@ -208,10 +282,11 @@ function PostDetailModal({
       <HeaderRow>
         <div>
           <Title>{post.place ?? "익명 게시물"}</Title>
+          <MetaText>{owner ? `게시자: ${owner.name}` : "게시자: 알 수 없음"}</MetaText>
           <MetaText>
             {isOwner
               ? "내 게시물"
-              : "사진을 클릭해 친구를 태그해보세요 (익명으로 제보돼요)"}
+              : "본인이 나온 사진이라면 '나예요' 버튼으로 확인을 요청해보세요"}
           </MetaText>
         </div>
         {!isOwner && (
@@ -233,7 +308,7 @@ function PostDetailModal({
             <TagLabel>{s.name}</TagLabel>
           </TagMarker>
         ))}
-        {pending && (
+        {!isOwner && claiming && (
           <PendingMarker
             style={{ left: `${pending.x}%`, top: `${pending.y}%` }}
           >
@@ -242,40 +317,148 @@ function PostDetailModal({
         )}
       </ImageFrame>
 
-      {!isOwner && pending && (
+      {!isOwner && !claiming && (
         <SuggestRow>
-          <Input
-            autoFocus
-            placeholder="이 사람은 누구인가요?"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <PillButton type="button" active onClick={submitSuggestion}>
-            제보
+          <PillButton type="button" active onClick={() => setClaiming(true)}>
+            나예요
           </PillButton>
         </SuggestRow>
       )}
 
+      {!isOwner && claiming && (
+        <FormSection>
+          <MetaText>
+            표시가 본인이 아닌 곳에 있다면, 사진에서 본인 위치를 클릭해
+            옮겨주세요.
+          </MetaText>
+          <div>
+            <FieldLabel>촬영 장소</FieldLabel>
+            <MetaText>{post.place ?? "정보 없음"}</MetaText>
+          </div>
+          <div>
+            <FieldLabel>촬영 날짜 (아는 만큼 적어주세요)</FieldLabel>
+            <ClaimInput
+              placeholder="예: 2026년 5월경"
+              value={claimedDate}
+              onChange={(e) => setClaimedDate(e.target.value)}
+            />
+          </div>
+          <div>
+            <FieldLabel>추가 정보</FieldLabel>
+            <ClaimTextArea
+              placeholder="본인이 맞다는 걸 확인할 수 있는 정보를 적어주세요 (옷차림, 위치 등)"
+              value={claimInfo}
+              onChange={(e) => setClaimInfo(e.target.value)}
+              rows={3}
+            />
+          </div>
+          {claimError && <ErrorText>{claimError}</ErrorText>}
+          <SuggestRow>
+            <PillButton
+              type="button"
+              active
+              disabled={!claimInfo.trim()}
+              onClick={submitClaim}
+            >
+              확인 요청 보내기
+            </PillButton>
+            <PillButton type="button" onClick={() => setClaiming(false)}>
+              취소
+            </PillButton>
+          </SuggestRow>
+        </FormSection>
+      )}
+
+      {!isOwner && (
+        <SuggestRow>
+          {published ? (
+            <EmptyNote>이 게시물은 이미 Memory에 게시됐어요.</EmptyNote>
+          ) : myPublishRequest?.status === "pending" ? (
+            <EmptyNote>
+              Memory 게시를 요청했어요. 게시물 주인의 승인을 기다리는 중이에요.
+            </EmptyNote>
+          ) : (
+            <PillButton type="button" onClick={handleRequestPublish}>
+              Memory에 올려도 될까요?
+            </PillButton>
+          )}
+        </SuggestRow>
+      )}
+      {!isOwner && publishError && <ErrorText>{publishError}</ErrorText>}
+
       {isOwner && (
         <PendingSection>
-          <SectionLabel>대기 중인 제보 ({pendingList.length})</SectionLabel>
+          <SectionLabel>본인 확인 요청 ({pendingList.length})</SectionLabel>
+          {post.originalImageUrl && pendingList.length > 0 && (
+            <OriginalPreview src={post.originalImageUrl} alt="원본 사진" />
+          )}
           {pendingList.length === 0 ? (
-            <EmptyNote>대기 중인 제보가 없어요.</EmptyNote>
+            <EmptyNote>대기 중인 요청이 없어요.</EmptyNote>
           ) : (
             <PendingList>
               {pendingList.map((s) => (
                 <PendingItem key={s.id}>
-                  <PendingItemText>"{s.name}" 태그 제보</PendingItemText>
+                  <PendingItemText>
+                    {s.name}님이 본인이라며 확인을 요청했어요
+                    {s.claimedDate && (
+                      <MetaText>촬영 날짜: {s.claimedDate}</MetaText>
+                    )}
+                    {s.extraInfo && <MetaText>{s.extraInfo}</MetaText>}
+                  </PendingItemText>
                   <PendingItemActions>
                     <ApproveButton
                       type="button"
-                      onClick={() => reviewSuggestion(s.id, "approved")}
+                      onClick={() => handleClaimDecision(s.id, "approved")}
                     >
                       승인
                     </ApproveButton>
                     <RejectButton
                       type="button"
-                      onClick={() => reviewSuggestion(s.id, "rejected")}
+                      onClick={() => handleClaimDecision(s.id, "rejected")}
+                    >
+                      거절
+                    </RejectButton>
+                  </PendingItemActions>
+                </PendingItem>
+              ))}
+            </PendingList>
+          )}
+          {claimError && <ErrorText>{claimError}</ErrorText>}
+        </PendingSection>
+      )}
+
+      {isOwner && (
+        <PendingSection>
+          <SectionLabel>Memory 게시 요청 ({pendingPublishRequests.length})</SectionLabel>
+          {published ? (
+            <EmptyNote>이 게시물은 이미 Memory에 게시됐어요.</EmptyNote>
+          ) : pendingPublishRequests.length === 0 ? (
+            <EmptyNote>대기 중인 게시 요청이 없어요.</EmptyNote>
+          ) : (
+            <PendingList>
+              {pendingPublishRequests.map((r) => (
+                <PendingItem key={r.id}>
+                  <PendingItemText>
+                    Memory에 올려달라는 요청이 있어요
+                  </PendingItemText>
+                  <PendingItemActions>
+                    <ApproveButton
+                      type="button"
+                      onClick={() => handlePublishDecision(r.id, "blurred")}
+                    >
+                      블러로 올리기
+                    </ApproveButton>
+                    {post.originalImageUrl && (
+                      <AltApproveButton
+                        type="button"
+                        onClick={() => handlePublishDecision(r.id, "original")}
+                      >
+                        원본으로 올리기
+                      </AltApproveButton>
+                    )}
+                    <RejectButton
+                      type="button"
+                      onClick={() => handlePublishDecision(r.id, "rejected")}
                     >
                       거절
                     </RejectButton>
@@ -286,6 +469,7 @@ function PostDetailModal({
           )}
         </PendingSection>
       )}
+      {isOwner && publishError && <ErrorText>{publishError}</ErrorText>}
 
       <ReportModal
         open={reportOpen}
@@ -328,7 +512,8 @@ export default function TagBoard() {
         <div>
           <PageTitle>Anonymous Tagging</PageTitle>
           <PageSubtitle>
-            얼굴을 블러 처리한 사진에 친구를 익명으로 태그해보세요.
+            얼굴을 블러 처리한 사진에서 본인을 찾으면 "나예요"로 확인을
+            요청해보세요.
           </PageSubtitle>
         </div>
         <PillButton type="button" onClick={() => setNewPostOpen(true)}>
@@ -353,12 +538,16 @@ export default function TagBoard() {
         <EmptyState interactive={false}>아직 게시물이 없어요.</EmptyState>
       ) : (
         <PostGrid>
-          {visiblePosts.map((post) => (
-            <PostCard key={post.id} onClick={() => setSelected(post)}>
-              <PostThumb src={post.imageUrl} alt={post.place ?? "tag post"} />
-              <PostCaption>{post.place ?? "익명 게시물"}</PostCaption>
-            </PostCard>
-          ))}
+          {visiblePosts.map((post) => {
+            const owner = usersById.get(post.ownerId);
+            return (
+              <PostCard key={post.id} onClick={() => setSelected(post)}>
+                <PostThumb src={post.imageUrl} alt={post.place ?? "tag post"} />
+                <PostCaption>{post.place ?? "익명 게시물"}</PostCaption>
+                <PostMeta>{owner ? owner.name : "알 수 없음"}</PostMeta>
+              </PostCard>
+            );
+          })}
         </PostGrid>
       )}
 

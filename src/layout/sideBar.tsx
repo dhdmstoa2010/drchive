@@ -26,7 +26,7 @@ export type TabId =
   | "mypage";
 
 const TABS: { id: TabId; label: string }[] = [
-  { id: "home", label: "Timeline" },
+  { id: "home", label: "Memory" },
   { id: "capsule", label: "Time Capsule" },
   { id: "chronicle", label: "Chronicle" },
   { id: "tag", label: "Anonymous Tagging" },

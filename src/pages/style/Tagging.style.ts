@@ -2,6 +2,7 @@ import styled from "@emotion/styled";
 import { css } from "@emotion/react";
 import { GlassCard } from "../../components/ui/GlassCard";
 import { colors } from "../../styles/theme";
+import { fieldStyles } from "../../styles/select";
 
 export const PageWrapper = styled.div`
   display: flex;
@@ -69,22 +70,16 @@ export const PostThumb = styled.img`
 `;
 
 export const PostCaption = styled.div`
-  padding: 12px 16px;
+  padding: 12px 16px 4px;
   font-size: 14px;
   font-weight: 700;
   color: ${colors.ink};
 `;
 
-/* shared form field */
-export const Input = styled.input`
-  flex: 1;
-  padding: 10px 16px;
-  border-radius: 9999px;
-  border: 1.5px solid ${colors.glassBorder};
-  background: ${colors.glassBgSoft};
-  font-size: 14px;
-  color: ${colors.ink};
-  outline: none;
+export const PostMeta = styled.div`
+  padding: 0 16px 12px;
+  font-size: 12px;
+  color: ${colors.inkFaint};
 `;
 
 /* NewPostModal */
@@ -286,6 +281,24 @@ export const SuggestRow = styled.div`
   margin-top: 16px;
 `;
 
+export const ClaimInput = styled.input`
+  ${fieldStyles}
+`;
+
+export const ClaimTextArea = styled.textarea`
+  ${fieldStyles}
+  resize: vertical;
+`;
+
+export const OriginalPreview = styled.img`
+  width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+  border-radius: 12px;
+  border: 1.5px solid ${colors.glassBorder};
+  margin-bottom: 10px;
+`;
+
 export const PendingSection = styled.div`
   margin-top: 20px;
 `;
@@ -300,6 +313,13 @@ export const SectionLabel = styled.div`
 export const EmptyNote = styled.div`
   font-size: 12px;
   color: ${colors.inkFaint};
+`;
+
+export const ErrorText = styled.div`
+  font-size: 12px;
+  font-weight: 600;
+  color: ${colors.coralDeep};
+  margin-top: 8px;
 `;
 
 export const PendingList = styled.div`
@@ -338,6 +358,10 @@ export const ApproveButton = styled.button`
   border-radius: 9999px;
   border: none;
   cursor: pointer;
+`;
+
+export const AltApproveButton = styled(ApproveButton)`
+  background: ${colors.coralDeep};
 `;
 
 export const RejectButton = styled.button`

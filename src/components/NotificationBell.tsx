@@ -1,11 +1,10 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useNotifications } from "../hooks/useNotifications";
 import {
   Wrapper,
   BellButton,
   Badge,
-  Backdrop,
   Dropdown,
   DropdownHeader,
   HeaderTitle,
@@ -38,9 +37,30 @@ export function NotificationBell() {
     useNotifications();
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    function handlePointerDown(e: MouseEvent) {
+      if (!wrapperRef.current?.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
 
   return (
-    <Wrapper>
+    <Wrapper ref={wrapperRef}>
       <BellButton type="button" onClick={() => setOpen((v) => !v)}>
         <BellIcon />
         {unreadCount > 0 && (
@@ -50,7 +70,6 @@ export function NotificationBell() {
 
       {open && (
         <>
-          <Backdrop onClick={() => setOpen(false)} />
           <Dropdown>
             <DropdownHeader>
               <HeaderTitle>알림</HeaderTitle>

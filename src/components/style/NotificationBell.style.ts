@@ -37,12 +37,6 @@ export const Badge = styled.span`
   justify-content: center;
 `;
 
-export const Backdrop = styled.div`
-  position: fixed;
-  inset: 0;
-  z-index: 40;
-`;
-
 export const Dropdown = styled.div`
   position: absolute;
   left: 0;

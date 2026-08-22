@@ -200,6 +200,16 @@ function PostDetailModal({
   const [claimError, setClaimError] = useState<string | null>(null);
   const [prefMosaic, setPrefMosaic] = useState(true);
   const [prefPublish, setPrefPublish] = useState(true);
+  // This modal stays mounted across different posts (TagBoard always
+  // renders one instance), so switching posts without cancelling an
+  // in-progress claim/report must not carry the stale form onto the new
+  // post — e.g. a still-selected "제보" target getting submitted against
+  // whichever post is opened next.
+  const [openPostId, setOpenPostId] = useState(post?.id);
+  if (post && post.id !== openPostId) {
+    setOpenPostId(post.id);
+    resetClaimForm();
+  }
 
   if (!post) return null;
   const isOwner = currentUser?.id === post.ownerId;
@@ -258,6 +268,9 @@ function PostDetailModal({
     setClaimedDate("");
     setClaimInfo("");
     setReportedUserId("");
+    setPrefMosaic(true);
+    setPrefPublish(true);
+    setClaimError(null);
   }
 
   async function submitClaim() {

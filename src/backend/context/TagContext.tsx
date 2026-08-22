@@ -2,9 +2,10 @@ import { createContext, useEffect, useState, type ReactNode } from "react";
 import {
   addDoc,
   collection,
-  deleteDoc,
   doc,
   onSnapshot,
+  runTransaction,
+  serverTimestamp,
   updateDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
@@ -19,8 +20,7 @@ import type {
 } from "../../types";
 import { useAuth } from "../../hooks/useAuth";
 import { useNotifications } from "../../hooks/useNotifications";
-import { usePhotos } from "../../hooks/usePhotos";
-import { SEMESTERS } from "../../constants/semester";
+import { DEFAULT_SEMESTER } from "../../constants/semester";
 
 type CreatePostInput = {
   imageUrl: string;
@@ -56,8 +56,10 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-// Finds which blurred rect a suggestion's click point falls in — falls back
-// to the closest rect center if the click landed just outside every box.
+// Finds which blurred rect a suggestion's click point falls in. Deliberately
+// has no "closest rect" fallback: guessing which face a click near-but-not-
+// on a boundary belongs to risks revealing a *different* person's blurred
+// region than the one the submitter actually claimed.
 function findRectForPoint(
   rects: BlurRect[] | undefined,
   xPercent: number,
@@ -66,16 +68,9 @@ function findRectForPoint(
   if (!rects || rects.length === 0) return undefined;
   const x = xPercent / 100;
   const y = yPercent / 100;
-  const containing = rects.find(
+  return rects.find(
     (r) => x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h,
   );
-  if (containing) return containing;
-
-  return rects.reduce((closest, r) => {
-    const dist = (r.x + r.w / 2 - x) ** 2 + (r.y + r.h / 2 - y) ** 2;
-    const closestDist = (closest.x + closest.w / 2 - x) ** 2 + (closest.y + closest.h / 2 - y) ** 2;
-    return dist < closestDist ? r : closest;
-  });
 }
 
 // Composites just one rect of the original (unblurred) photo back onto the
@@ -140,7 +135,6 @@ export const TagContext = createContext<TagContextValue | null>(null);
 export function TagProvider({ children }: { children: ReactNode }) {
   const { currentUser, users } = useAuth();
   const { notify } = useNotifications();
-  const { uploadPhoto } = usePhotos();
   const isAdmin = currentUser?.username === "admin";
   const adminUser = users.find((u) => u.username === "admin");
   const [posts, setPosts] = useState<TagPost[]>([]);
@@ -239,7 +233,7 @@ export function TagProvider({ children }: { children: ReactNode }) {
   ) {
     const suggestion = suggestions.find((s) => s.id === id);
     const post = suggestion && posts.find((p) => p.id === suggestion.postId);
-    if (!suggestion || !post) return;
+    if (!suggestion || !post || suggestion.status !== "pending") return;
     const isSelfClaim = suggestion.taggedUserId === suggestion.submitterId;
 
     const status: SuggestionStatus =
@@ -286,7 +280,8 @@ export function TagProvider({ children }: { children: ReactNode }) {
     if (!suggestion || !post) return;
     if (
       suggestion.status !== "admin_approved" ||
-      suggestion.submitterId !== currentUser?.id
+      suggestion.submitterId !== currentUser?.id ||
+      suggestion.wantsMosaicRemoved !== undefined
     ) {
       return;
     }
@@ -326,10 +321,14 @@ export function TagProvider({ children }: { children: ReactNode }) {
 
     const status: SuggestionStatus =
       decision === "approved" ? "owner_approved" : "owner_rejected";
-    await updateDoc(doc(db, "tagSuggestions", id), { status });
 
     // Only reveal the mosaic for self-claims the submitter opted into — a
     // third party recognizing someone else isn't that person's own consent.
+    // The reveal runs inside a transaction that re-reads the post's CURRENT
+    // imageUrl at commit time, so two reveals approved close together can't
+    // silently overwrite each other (Firestore retries on conflict instead).
+    let revealSucceeded = false;
+    let attemptedReveal = false;
     if (
       decision === "approved" &&
       isSelfClaim &&
@@ -338,20 +337,28 @@ export function TagProvider({ children }: { children: ReactNode }) {
     ) {
       const rect = findRectForPoint(post.blurRects, suggestion.x, suggestion.y);
       if (rect) {
+        attemptedReveal = true;
         try {
-          const revealedImageUrl = await revealRegion(
-            post.imageUrl,
-            post.originalImageUrl,
-            rect,
-          );
-          await updateDoc(doc(db, "tagPosts", post.id), {
-            imageUrl: revealedImageUrl,
+          await runTransaction(db, async (tx) => {
+            const postRef = doc(db, "tagPosts", post.id);
+            const postSnap = await tx.get(postRef);
+            if (!postSnap.exists()) return;
+            const currentImageUrl = postSnap.data().imageUrl as string;
+            const revealedImageUrl = await revealRegion(
+              currentImageUrl,
+              post.originalImageUrl!,
+              rect,
+            );
+            tx.update(postRef, { imageUrl: revealedImageUrl });
           });
+          revealSucceeded = true;
         } catch (err) {
           console.error("모자이크 해제 실패:", err);
         }
       }
     }
+
+    await updateDoc(doc(db, "tagSuggestions", id), { status });
 
     await notify({
       userId: suggestion.submitterId,
@@ -368,9 +375,13 @@ export function TagProvider({ children }: { children: ReactNode }) {
         decision === "approved"
           ? isSelfClaim
             ? suggestion.wantsMosaicRemoved
-              ? suggestion.wantsPublish
-                ? "요청하신 부분의 모자이크가 해제됐어요. 이제 Memory 게시를 요청할 수 있어요."
-                : "요청하신 부분의 모자이크가 해제됐어요."
+              ? attemptedReveal && !revealSucceeded
+                ? "본인 확인은 최종 승인됐지만 모자이크 해제 처리 중 문제가 생겼어요. 잠시 후 다시 시도해주세요."
+                : revealSucceeded && suggestion.wantsPublish
+                  ? "요청하신 부분의 모자이크가 해제됐어요. 이제 Memory 게시를 요청할 수 있어요."
+                  : revealSucceeded
+                    ? "요청하신 부분의 모자이크가 해제됐어요."
+                    : "본인 확인이 최종 승인됐어요."
               : "본인 확인이 최종 승인됐어요."
             : `제보하신 "${suggestion.name}" 태그가 게시물에 반영됐어요.`
           : isSelfClaim
@@ -431,39 +442,116 @@ export function TagProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // Once a post is published to Memory, every OTHER still-pending
+  // suggestion/publish-request tied to that same post becomes unreachable
+  // (the tagPosts doc is gone, and every review function short-circuits on
+  // the missing post) — so let their submitters/requesters know instead of
+  // leaving them stuck with no explanation.
+  async function notifyOrphanedRequestsForPost(
+    postId: string,
+    exceptPublishRequestId: string,
+  ) {
+    const orphanedSuggestions = suggestions.filter(
+      (s) =>
+        s.postId === postId &&
+        (s.status === "pending" || s.status === "admin_approved"),
+    );
+    for (const s of orphanedSuggestions) {
+      await notify({
+        userId: s.submitterId,
+        type: "tag_rejected",
+        title: "게시물이 먼저 Memory로 이동했어요",
+        message:
+          "요청하신 게시물이 다른 요청으로 먼저 Memory에 게시돼 더 이상 처리할 수 없게 됐어요.",
+        linkTo: "/tag",
+      });
+    }
+
+    const orphanedRequests = publishRequests.filter(
+      (r) =>
+        r.postId === postId &&
+        r.status === "pending" &&
+        r.id !== exceptPublishRequestId,
+    );
+    for (const r of orphanedRequests) {
+      await notify({
+        userId: r.requesterId,
+        type: "publish_rejected",
+        title: "Memory 게시가 이미 처리됐어요",
+        message:
+          "다른 요청으로 이 게시물이 먼저 Memory에 게시돼 이 요청은 더 이상 처리되지 않아요.",
+        linkTo: "/tag",
+      });
+    }
+  }
+
   async function reviewPublishRequest(id: string, decision: PublishDecision) {
     const request = publishRequests.find((r) => r.id === id);
     const post = request && posts.find((p) => p.id === request.postId);
     if (!request || !post) return;
 
-    await updateDoc(doc(db, "publishRequests", id), {
-      status: decision === "rejected" ? "rejected" : "approved",
+    if (decision === "rejected") {
+      await updateDoc(doc(db, "publishRequests", id), { status: "rejected" });
+      await notify({
+        userId: request.requesterId,
+        type: "publish_rejected",
+        title: "Memory 게시가 거절됐어요",
+        message: "요청하신 게시물의 Memory 게시가 거절됐어요.",
+        linkTo: "/tag",
+      });
+      return;
+    }
+
+    const imageUrl =
+      decision === "original" ? (post.originalImageUrl ?? post.imageUrl) : post.imageUrl;
+
+    // Creating the Memory photo and deleting the tagPost happen in one
+    // transaction that re-checks the post still exists at commit time, so
+    // two publish requests approved close together can't both succeed and
+    // create duplicate Memory photos.
+    const photoRef = doc(collection(db, "photos"));
+    const published = await runTransaction(db, async (tx) => {
+      const postRef = doc(db, "tagPosts", post.id);
+      const postSnap = await tx.get(postRef);
+      if (!postSnap.exists()) return false;
+      tx.set(photoRef, {
+        place: post.place ?? "익명 장소",
+        date: new Date().toISOString().slice(0, 10).replace(/-/g, "."),
+        uploader: currentUser
+          ? `${currentUser.name}, ${currentUser.grade}학년 ${currentUser.className}반`
+          : "익명",
+        uploaderId: currentUser?.id ?? null,
+        semesterLabel: DEFAULT_SEMESTER,
+        imageUrl,
+        description: "",
+        visibility: post.visibility ?? "grade",
+        createdAt: serverTimestamp(),
+      });
+      tx.delete(postRef);
+      return true;
     });
 
-    if (decision !== "rejected") {
-      const imageUrl =
-        decision === "original"
-          ? (post.originalImageUrl ?? post.imageUrl)
-          : post.imageUrl;
-      await uploadPhoto({
-        place: post.place ?? "익명 장소",
-        semesterLabel: SEMESTERS[SEMESTERS.length - 1].id,
-        imageUrl,
-        visibility: post.visibility ?? "grade",
+    if (!published) {
+      await updateDoc(doc(db, "publishRequests", id), { status: "rejected" });
+      await notify({
+        userId: request.requesterId,
+        type: "publish_rejected",
+        title: "이미 처리됐어요",
+        message: "다른 요청으로 이 게시물이 이미 Memory에 게시됐어요.",
+        linkTo: "/tag",
       });
-      // Now that it lives on Memory, drop it from Tagging entirely.
-      await deleteDoc(doc(db, "tagPosts", post.id));
+      return;
     }
+
+    await updateDoc(doc(db, "publishRequests", id), { status: "approved" });
+    await notifyOrphanedRequestsForPost(post.id, id);
 
     await notify({
       userId: request.requesterId,
-      type: decision === "rejected" ? "publish_rejected" : "publish_approved",
-      title: decision === "rejected" ? "Memory 게시가 거절됐어요" : "Memory 게시가 승인됐어요",
-      message:
-        decision === "rejected"
-          ? "요청하신 게시물의 Memory 게시가 거절됐어요."
-          : "요청하신 게시물이 Memory에 올라갔어요.",
-      linkTo: decision === "rejected" ? "/tag" : "/",
+      type: "publish_approved",
+      title: "Memory 게시가 승인됐어요",
+      message: "요청하신 게시물이 Memory에 올라갔어요.",
+      linkTo: "/",
     });
   }
 

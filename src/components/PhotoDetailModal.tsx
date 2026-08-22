@@ -7,7 +7,7 @@ import { PillButton } from "./ui/PillButton";
 import { useAuth } from "../hooks/useAuth";
 import { usePhotos } from "../hooks/usePhotos";
 import { useReports } from "../hooks/useReports";
-import { SEMESTERS } from "../constants/semester";
+import { SEMESTERS, DEFAULT_SEMESTER } from "../constants/semester";
 import type { Photo, Visibility } from "../types";
 import {
   DetailImage,
@@ -50,10 +50,19 @@ export function PhotoDetailModal({ photo, onClose }: PhotoDetailModalProps) {
   const [reportOpen, setReportOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editPlace, setEditPlace] = useState("");
-  const [editSemester, setEditSemester] = useState(SEMESTERS[0].id);
+  const [editSemester, setEditSemester] = useState(DEFAULT_SEMESTER);
   const [editDescription, setEditDescription] = useState("");
   const [editVisibility, setEditVisibility] = useState<Visibility>("grade");
   const [editError, setEditError] = useState<string | null>(null);
+  // The modal component stays mounted across different photos (Memory.tsx
+  // always renders one instance), so switching photos without cancelling
+  // an in-progress edit must not carry stale form state onto the new photo.
+  const [openPhotoId, setOpenPhotoId] = useState(photo?.id);
+  if (photo && photo.id !== openPhotoId) {
+    setOpenPhotoId(photo.id);
+    setEditing(false);
+    setEditError(null);
+  }
 
   if (!photo) return null;
 

@@ -46,15 +46,38 @@ service cloud.firestore {
     // Tag suggestions ("나예요" / "제보") — anyone can submit. Three-stage
     // review: an admin verifies identity, then (for self-claims) the
     // submitter states their own mosaic/publish preferences, then the post
-    // owner decides whether to make it public.
+    // owner decides whether to make it public. Each stage's writer may only
+    // touch the field(s) that stage owns — otherwise a submitter could set
+    // status straight to 'owner_approved' themselves, or an owner could
+    // approve a suggestion admin never reviewed.
     match /tagSuggestions/{suggestionId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.submitterId == request.auth.uid;
-      allow update: if isAdmin() ||
-        ownerOfPost(resource.data.postId) ||
-        (isSignedIn() &&
-          resource.data.submitterId == request.auth.uid &&
-          resource.data.status == 'admin_approved');
+
+      // Stage 1 — admin moves pending -> admin_approved/admin_rejected only.
+      allow update: if isAdmin() &&
+        resource.data.status == 'pending' &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) &&
+        request.resource.data.status in ['admin_approved', 'admin_rejected'];
+
+      // Stage 2 — the submitter states their own preferences exactly once,
+      // only after admin approval, only on their own suggestion.
+      allow update: if isSignedIn() &&
+        resource.data.submitterId == request.auth.uid &&
+        resource.data.status == 'admin_approved' &&
+        !('wantsMosaicRemoved' in resource.data) &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['wantsMosaicRemoved', 'wantsPublish']);
+
+      // Stage 3 — the post owner moves admin_approved -> owner_approved/
+      // owner_rejected only, and only once a self-claim's own preferences
+      // (if any) are already in place.
+      allow update: if ownerOfPost(resource.data.postId) &&
+        resource.data.status == 'admin_approved' &&
+        (resource.data.taggedUserId != resource.data.submitterId ||
+          'wantsMosaicRemoved' in resource.data) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) &&
+        request.resource.data.status in ['owner_approved', 'owner_rejected'];
     }
 
     // "Memory에 올려도 될까요?" publish requests — anyone can ask, only the

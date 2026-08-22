@@ -4,7 +4,7 @@ import { PillButton } from "./ui/PillButton";
 import { VisibilityPicker } from "./ui/VisibilityPicker";
 import { usePhotos } from "../hooks/usePhotos";
 import { fileToResizedDataUrl } from "../utils/image";
-import { SEMESTERS } from "../constants/semester";
+import { SEMESTERS, DEFAULT_SEMESTER } from "../constants/semester";
 import type { Visibility } from "../types";
 import {
   Title,
@@ -61,7 +61,7 @@ export function PhotoUploadModal({ open, onClose }: PhotoUploadModalProps) {
     setPlace(placeOptions[0] ?? CUSTOM_PLACE);
   }
 
-  const [semesterLabel, setSemesterLabel] = useState(SEMESTERS[0].id);
+  const [semesterLabel, setSemesterLabel] = useState(DEFAULT_SEMESTER);
   const [description, setDescription] = useState("");
   const [visibility, setVisibility] = useState<Visibility>("grade");
   const [preview, setPreview] = useState<string | null>(null);
@@ -71,7 +71,7 @@ export function PhotoUploadModal({ open, onClose }: PhotoUploadModalProps) {
     setPlace(placeOptions[0] ?? CUSTOM_PLACE);
     setPlaceTouched(false);
     setCustomPlace("");
-    setSemesterLabel(SEMESTERS[0].id);
+    setSemesterLabel(DEFAULT_SEMESTER);
     setDescription("");
     setVisibility("grade");
     setPreview(null);
